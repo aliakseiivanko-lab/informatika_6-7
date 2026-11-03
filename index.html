@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Инициализация исполнителей</title>
+
+  <style>
+    :root {
+      --bg: #070b14;
+      --panel: rgba(10, 16, 28, 0.76);
+      --border: rgba(255, 255, 255, 0.09);
+      --text: #e6edf7;
+      --muted: #a8b4cc;
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --violet: #a78bfa;
+      --pink: #f472b6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.10), transparent 28%),
+        radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.10), transparent 25%),
+        radial-gradient(circle at 50% 100%, rgba(52, 211, 153, 0.08), transparent 30%),
+        linear-gradient(180deg, #060912 0%, #070b14 45%, #05070d 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    #bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.75;
+    }
+
+    .boot {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at center, rgba(8, 13, 24, 0.88), rgba(3, 6, 14, 0.98));
+      backdrop-filter: blur(14px);
+      transition: opacity 0.65s ease, visibility 0.65s ease;
+    }
+    .boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .boot-inner {
+      width: min(700px, 92vw);
+      padding: 34px;
+      border-radius: 28px;
+      background: rgba(9, 14, 25, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(18px);
+    }
+
+    .boot-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+
+    .boot-orb {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: conic-gradient(from 180deg, var(--cyan), var(--green), var(--violet), var(--cyan));
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.28), inset 0 0 18px rgba(255, 255, 255, 0.18);
+      animation: spin 3.2s linear infinite;
+      position: relative;
+    }
+    .boot-orb::after {
+      content: ""; position: absolute; inset: 7px; border-radius: 50%;
+      background: #090e19; box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.06);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .boot-title { margin: 0; font-size: clamp(1.3rem, 3vw, 2rem); letter-spacing: 0.02em; }
+    .boot-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
+
+    .boot-lines {
+      min-height: 122px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95rem; line-height: 1.7; color: #b9c6dd;
+    }
+    .boot-line {
+      opacity: 0; transform: translateY(10px);
+      animation: lineIn 0.45s ease forwards; white-space: pre-wrap;
+    }
+    @keyframes lineIn { to { opacity: 1; transform: translateY(0); } }
+
+    .boot-progress {
+      margin-top: 24px; height: 9px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07); overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .boot-progress span {
+      display: block; width: 0%; height: 100%; border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--green), var(--violet));
+      box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+      transition: width 0.28s ease;
+    }
+
+    .app {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 34px; padding: 48px 20px;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .app.ready { opacity: 1; transform: translateY(0); }
+
+    .hero { text-align: center; max-width: 920px; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #cbd5e1; font-size: 0.92rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      margin-bottom: 18px;
+    }
+    .badge-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 14px rgba(52, 211, 153, 0.85);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.72; }
+    }
+
+    h1 {
+      margin: 0; font-size: clamp(2.2rem, 6vw, 4.5rem);
+      line-height: 1.03; letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #ffffff 0%, #bfe9ff 35%, #d8c8ff 70%, #ffffff 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 10px 30px rgba(34, 211, 238, 0.12));
+    }
+
+    .subtitle {
+      margin: 18px auto 0; max-width: 760px; color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.12rem); line-height: 1.65;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+      gap: 24px; width: min(1140px, 100%); perspective: 1200px;
+    }
+
+    .card {
+      --accent: #34d399;
+      --accent-rgb: 52, 211, 153;
+      --accent2: #22d3ee;
+      --accent2-rgb: 34, 211, 238;
+
+      position: relative;
+      display: flex; flex-direction: column; gap: 18px;
+      padding: 30px; border-radius: 30px; overflow: hidden;
+      text-decoration: none; color: inherit;
+      background: linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(7, 11, 20, 0.94));
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      transform-style: preserve-3d; will-change: transform; outline: none;
+    }
+    .card.robot {
+      --accent: #a78bfa; --accent-rgb: 167, 139, 250;
+      --accent2: #f472b6; --accent2-rgb: 244, 114, 182;
+    }
+
+    .card::before {
+      content: ""; position: absolute; inset: -35%;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+        rgba(var(--accent-rgb), 0.22), transparent 45%);
+      opacity: 0; transition: opacity 0.28s ease; pointer-events: none;
+    }
+    .card::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.045) 45%, transparent 60%);
+      transform: translateX(-120%); transition: transform 0.8s ease; pointer-events: none;
+    }
+    .card:hover::before, .card:focus-visible::before { opacity: 1; }
+    .card:hover::after, .card:focus-visible::after { transform: translateX(120%); }
+    .card:hover, .card:focus-visible {
+      border-color: rgba(var(--accent-rgb), 0.38);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42),
+        0 0 0 1px rgba(var(--accent-rgb), 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .card:focus-visible {
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42), 0 0 0 4px rgba(var(--accent-rgb), 0.20);
+    }
+
+    .icon-wrap {
+      width: 92px; height: 92px; border-radius: 26px;
+      display: grid; place-items: center;
+      background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.24), rgba(255, 255, 255, 0.045));
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 14px 34px rgba(0, 0, 0, 0.22);
+      transform: translateZ(28px);
+    }
+    .icon-wrap svg {
+      width: 52px; height: 52px; stroke: var(--accent); fill: none;
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+      filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.28));
+    }
+
+    .card h2 {
+      margin: 0; font-size: clamp(1.45rem, 3vw, 1.9rem);
+      letter-spacing: -0.02em; transform: translateZ(18px);
+    }
+
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      transform: translateZ(12px);
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 13px; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #d7dfec; font-size: 0.86rem; backdrop-filter: blur(8px);
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.85);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    .open-btn {
+      align-self: flex-start;
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-top: auto;
+      padding: 13px 18px; border-radius: 16px;
+      font-weight: 750; letter-spacing: 0.01em; color: white;
+      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.20), rgba(var(--accent2-rgb), 0.14));
+      border: 1px solid rgba(var(--accent-rgb), 0.42);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.18);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      transform: translateZ(22px); pointer-events: none;
+    }
+    .card:hover .open-btn, .card:focus-visible .open-btn {
+      transform: translateZ(28px) translateY(-1px);
+      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.28), rgba(var(--accent2-rgb), 0.18));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 16px 34px rgba(0, 0, 0, 0.22),
+        0 0 24px rgba(var(--accent-rgb), 0.12);
+    }
+
+    .hints {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 14px 22px; color: #8190aa; font-size: 0.92rem;
+    }
+    kbd {
+      display: inline-grid; place-items: center;
+      min-width: 26px; height: 24px; padding: 0 7px; border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.22);
+      color: #dbe5f3;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.82rem;
+    }
+
+    .launch-overlay {
+      position: fixed; inset: 0; z-index: 90;
+      display: grid; place-items: center;
+      background: rgba(3, 7, 18, 0.84); backdrop-filter: blur(12px);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.32s ease, visibility 0.32s ease;
+    }
+    .launch-overlay.show { opacity: 1; visibility: visible; }
+
+    .launch-box {
+      width: min(620px, 92vw); padding: 38px; border-radius: 30px; text-align: center;
+      background: rgba(9, 14, 25, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transform: scale(0.96); transition: transform 0.32s ease;
+    }
+    .launch-overlay.show .launch-box { transform: scale(1); }
+
+    .launch-title {
+      color: #94a3b8; font-size: 0.95rem; letter-spacing: 0.12em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .launch-name {
+      font-size: clamp(1.6rem, 5vw, 2.6rem); font-weight: 850;
+      letter-spacing: -0.03em; margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff, #bde8ff, #ded1ff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .launch-bar {
+      width: min(460px, 100%); height: 9px; margin: 0 auto 16px;
+      border-radius: 999px; background: rgba(255, 255, 255, 0.07);
+      overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .launch-bar span {
+      display: block; width: 0%; height: 100%; border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--green), var(--violet));
+      box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+      transition: width 0.22s linear;
+    }
+    .launch-status {
+      color: #a8b4cc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 720px) {
+      .boot-inner, .launch-box { padding: 24px; }
+      .card { padding: 24px; }
+      .icon-wrap { width: 76px; height: 76px; border-radius: 22px; }
+      .icon-wrap svg { width: 42px; height: 42px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+
+  <div class="boot" id="boot" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <div class="boot-head">
+        <div class="boot-orb" aria-hidden="true"></div>
+        <div>
+          <h2 class="boot-title">Система запуска</h2>
+          <p class="boot-subtitle">Инициализация исполнительных сред</p>
+        </div>
+      </div>
+
+      <div class="boot-lines" id="bootLines"></div>
+
+      <div class="boot-progress" aria-hidden="true">
+        <span id="bootFill"></span>
+      </div>
+    </div>
+  </div>
+
+  <main class="app" id="app">
+    <section class="hero">
+      <div class="badge">
+        <span class="badge-dot" aria-hidden="true"></span>
+        Выберите исполнителя
+      </div>
+
+      <h1>Инициализация проекта</h1>
+
+      <p class="subtitle">
+        Стартовая страница для перехода в модули <strong>Черепаха</strong>
+        и <strong>Робот</strong>. Наведите курсор, выберите среду — и она запустится
+        с плавной анимацией.
+      </p>
+    </section>
+
+    <section class="grid" aria-label="Доступные исполнители">
+      <a
+        class="card turtle"
+        href="turtle.html"
+        data-name="Черепаха-исполнитель"
+        aria-label="Открыть Черепаха-исполнитель"
+      >
+        <div class="icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <path d="M20 34c0-8 5-14 12-14s12 6 12 14-5 12-12 12-12-4-12-12Z" />
+            <path d="M44 30l7-4 3 5-6 4" />
+            <path d="M20 38l-7 3-2-5 6-4" />
+            <path d="M28 46l-2 7 5 1 2-6" />
+            <path d="M38 46l2 7-5 1-2-6" />
+            <path d="M26 30h12" />
+            <path d="M32 24v20" />
+          </svg>
+        </div>
+
+        <h2>Черепаха-исполнитель</h2>
+
+        <div class="meta">
+          <span class="pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            Готово к работе
+          </span>
+          <span class="pill">Клавиша <kbd>1</kbd></span>
+        </div>
+
+        <span class="open-btn">Открыть модуль →</span>
+      </a>
+
+      <a
+        class="card robot"
+        href="robot.html"
+        data-name="Робот-исполнитель"
+        aria-label="Открыть Робот-исполнитель"
+      >
+        <div class="icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <rect x="18" y="22" width="28" height="24" rx="7" />
+            <circle cx="27" cy="33" r="2.5" />
+            <circle cx="37" cy="33" r="2.5" />
+            <path d="M28 40h8" />
+            <path d="M32 22v-8" />
+            <path d="M32 14a3 3 0 1 0 .01 0" />
+            <path d="M18 30h-6" />
+            <path d="M52 30h6" />
+            <path d="M24 46v8" />
+            <path d="M40 46v8" />
+          </svg>
+        </div>
+
+        <h2>Робот-исполнитель</h2>
+
+        <div class="meta">
+          <span class="pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            Задание не выбрано
+          </span>
+          <span class="pill">Клавиша <kbd>2</kbd></span>
+        </div>
+
+        <span class="open-btn">Открыть модуль →</span>
+      </a>
+    </section>
+
+    <div class="hints" aria-hidden="true">
+      <span><kbd>1</kbd> — Черепаха</span>
+      <span><kbd>2</kbd> — Робот</span>
+      <span><kbd>Tab</kbd> — навигация</span>
+      <span><kbd>Enter</kbd> — открыть</span>
+    </div>
+  </main>
+
+  <div class="launch-overlay" id="launchOverlay" aria-hidden="true">
+    <div class="launch-box">
+      <div class="launch-title">Запуск среды</div>
+      <div class="launch-name" id="launchName">—</div>
+
+      <div class="launch-bar" aria-hidden="true">
+        <span id="launchFill"></span>
+      </div>
+
+      <div class="launch-status" id="launchStatus">Подключение...</div>
+    </div>
+  </div>
+
+  <noscript>
+    <style>
+      .boot { display: none !important; }
+      .app { opacity: 1 !important; transform: none !important; }
+    </style>
+  </noscript>
+
+  <script>
+    const AUTO_REDIRECT_PAGE = null;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const boot = document.getElementById("boot");
+    const bootLines = document.getElementById("bootLines");
+    const bootFill = document.getElementById("bootFill");
+    const app = document.getElementById("app");
+
+    const launchOverlay = document.getElementById("launchOverlay");
+    const launchName = document.getElementById("launchName");
+    const launchFill = document.getElementById("launchFill");
+    const launchStatus = document.getElementById("launchStatus");
+
+    const cards = document.querySelectorAll(".card");
+    let launching = false;
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function addBootLine(text) {
+      const line = document.createElement("div");
+      line.className = "boot-line";
+      line.textContent = text;
+      bootLines.appendChild(line);
+    }
+
+    async function runBootSequence() {
+      const steps = [
+        ["Инициализация оболочки...", 18],
+        ["Загрузка визуального ядра...", 42],
+        ["Проверка модулей исполнителей...", 72],
+        ["Синхронизация интерфейса...", 92],
+        ["Готово. Выберите среду.", 100],
+      ];
+
+      for (const [text, progress] of steps) {
+        addBootLine("> " + text);
+        bootFill.style.width = progress + "%";
+        await sleep(reduceMotion ? 70 : 480);
+      }
+
+      await sleep(reduceMotion ? 40 : 260);
+      boot.classList.add("done");
+      app.classList.add("ready");
+
+      if (AUTO_REDIRECT_PAGE) {
+        const targetCard = document.querySelector(`.card[href="${AUTO_REDIRECT_PAGE}"]`);
+        if (targetCard) {
+          launch(targetCard.getAttribute("href"), targetCard.dataset.name);
+        } else {
+          window.location.href = AUTO_REDIRECT_PAGE;
+        }
+      }
+    }
+
+    function launch(url, name) {
+      if (launching) return;
+      launching = true;
+
+      launchOverlay.classList.add("show");
+      launchOverlay.setAttribute("aria-hidden", "false");
+      launchName.textContent = name || "Исполнитель";
+      launchFill.style.width = "0%";
+
+      const stages = [
+        "Подключение к файлам...",
+        "Загрузка консоли...",
+        "Инициализация исполнителя...",
+        "Открытие страницы...",
+      ];
+      let index = 0;
+
+      function nextStage() {
+        if (index < stages.length) {
+          launchStatus.textContent = stages[index];
+          launchFill.style.width = (((index + 1) / stages.length) * 100) + "%";
+          index++;
+          setTimeout(nextStage, reduceMotion ? 70 : 260);
+        } else {
+          setTimeout(() => { window.location.href = url; }, reduceMotion ? 40 : 220);
+        }
+      }
+      nextStage();
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("mousemove", (event) => {
+        if (reduceMotion) return;
+        const rect = card.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width;
+        const y = (event.clientY - rect.top) / rect.height;
+        card.style.setProperty("--mx", `${x * 100}%`);
+        card.style.setProperty("--my", `${y * 100}%`);
+        const rotateX = (0.5 - y) * 7;
+        const rotateY = (x - 0.5) * 9;
+        card.style.transform =
+          `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
+      });
+
+      card.addEventListener("mouseleave", () => { card.style.transform = ""; });
+
+      card.addEventListener("click", (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        event.preventDefault();
+        launch(card.getAttribute("href"), card.dataset.name);
+      });
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (launching || !app.classList.contains("ready")) return;
+      const key = event.key;
+      if (key === "1" || key === "Numpad1") {
+        const turtle = document.querySelector(".card.turtle");
+        if (turtle) { event.preventDefault(); launch(turtle.getAttribute("href"), turtle.dataset.name); }
+      }
+      if (key === "2" || key === "Numpad2") {
+        const robot = document.querySelector(".card.robot");
+        if (robot) { event.preventDefault(); launch(robot.getAttribute("href"), robot.dataset.name); }
+      }
+    });
+
+    const canvas = document.getElementById("bg");
+    const ctx = canvas.getContext("2d");
+    let width = 0, height = 0, particles = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initParticles();
+    }
+    function initParticles() {
+      const count = Math.min(95, Math.floor((width * height) / 17000));
+      particles = Array.from({ length: count }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 2 + 1,
+      }));
+    }
+    function drawParticles() {
+      ctx.clearRect(0, 0, width, height);
+      for (const p of particles) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(148, 163, 184, 0.42)";
+        ctx.fill();
+      }
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i], b = particles[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 135) {
+            const alpha = (1 - dist / 135) * 0.18;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
+            ctx.lineWidth = 1; ctx.stroke();
+          }
+        }
+      }
+      if (!reduceMotion) requestAnimationFrame(drawParticles);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    drawParticles();
+    runBootSequence();
+  </script>
+</body>
+</html>
