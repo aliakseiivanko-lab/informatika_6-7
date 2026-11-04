@@ -1348,7 +1348,7 @@ async function run(){
   $('out').innerHTML+=`<span style="color:#c00">${esc((ln?'Ошибка в строке '+ln+': ':'')+m)}</span>`;stat('Ошибка выполнения','red');if(ln)hl(ln)}}
  finally{S.run=S.busy=false;W.tur.forEach(t=>t.live=null);draw();if(DOCHK){DOCHK=false;checkTask()}}}
 const stop=()=>{S.stop=true;S.run=false};
-function reset(){stop();S.cx=S.cy=0;newWorld();$('out').textContent='';msg('');resShow(!!TK);stat('Поле очищено');draw()}
+function reset(){stop();S.cx=S.cy=0;S.R=250;newWorld();$('out').textContent='';msg('');DOCHK=false;if(T[cur]){T[cur].task=null;T[cur].rs=false}syncTask();stat('Задание и поле сброшены');draw()}
 /* ---------- окна, справка ---------- */
 const HT=(rows)=>'<table>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>';
 const HS=(t,b)=>'<h4>'+t+'</h4>'+b;
@@ -1947,7 +1947,7 @@ new ResizeObserver(()=>drawT()).observe($('ct'));
  m.onclick=ev=>{if(ev.target===m){m.classList.add('open');place(dd)}};
  $('mb').append(m)});
 [['new_tab','Создать новую вкладку',()=>newTab()],['close_tab','Закрыть текущую вкладку',closeTab],['save','Сохранить файл',saveF],['open','Открыть файл',()=>$('fo').click()],['start','Запустить код (F5)',run],['end','Остановить выполнение',stop],
- ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Очистить поле',reset]
+ ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Сбросить задание и поле',reset]
 ].forEach(([ic,t,f])=>{const b=document.createElement('button');b.title=t;b.innerHTML=`<img src="${I[ic]}" alt="">`;b.onmousedown=e=>e.preventDefault();b.onclick=f;$('tb').append(b)});
 $('tb').insertAdjacentHTML('beforeend','<span id="sel">Выбранное задание: None</span>');
 const spd=v=>S.ups=60+4940*(v/100)**2;$('sp').oninput=()=>spd(+$('sp').value);spd(+$('sp').value);
