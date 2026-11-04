@@ -62,8 +62,9 @@ canvas{display:block}
 #tk-chk{font-weight:600;border-color:#4a9a5a!important}
 #tk-h{display:none;margin-top:6px;padding:5px 8px;background:#eef6ff;border-radius:5px;line-height:1.45}
 #tk-res{margin-top:6px;line-height:1.45}#tk-res .ok{color:#15803d;font-weight:600}#tk-res .bad{color:#b91c1c;font-weight:600}
+#mb .home{display:flex;align-items:center;gap:6px;padding:5px 14px;color:#1d4ed8;font-weight:600;text-decoration:none;background:#f3f6fc;border-right:1px solid #ccd;white-space:nowrap}#mb .home:hover,#mb .home:focus-visible{background:#e3edfb;outline:none}
 </style></head><body>
-<div id="mb"></div><div id="tb"></div>
+<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="task" class="hid"><div class="th"><b id="tk-t"></b><button id="tk-x" title="Закрыть задание">✕</button></div><div id="tk-b"></div></div><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div><div>Консоль:</div><pre id="out"></pre></div>
 <div id="R"><div id="rr"><div id="cw1"><div class="th">Поле черепахи<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><div id="cvw"><canvas id="cv"></canvas></div></div><div id="tp" class="hid"><div class="th">Результат выполнения задания<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><canvas id="ct"></canvas></div></div><div id="info"></div><div id="msg"></div><div id="bar">Скорость: <input type="range" id="sp" min="0" max="100" value="30"><span id="stat">Статус: Готово к работе</span></div></div></div>
 <input type="file" id="fo" hidden><div id="toast"></div><div id="ac"></div>

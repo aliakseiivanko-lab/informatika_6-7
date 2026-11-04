@@ -42,8 +42,22 @@ canvas{display:block}
 .cw{flex:1 1 0;min-height:200px;width:100%;border:1px solid #ccd}.rw{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rw input{flex:1}.rw button{padding:5px 14px}
 .rc{display:grid;grid-template-columns:repeat(3,56px);gap:8px;justify-content:center}.rc button{height:48px;font-size:20px;color:#fff;background:grey;border:0;border-radius:6px;cursor:pointer}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:6px;display:none;z-index:9999}
+#mb .home{display:flex;align-items:center;gap:6px;padding:5px 14px;color:#1d4ed8;font-weight:600;text-decoration:none;background:#f3f6fc;border-right:1px solid #ccd;white-space:nowrap}#mb .home:hover,#mb .home:focus-visible{background:#e3edfb;outline:none}
+
+.hp{font:14px/1.5 system-ui,"Segoe UI",Arial,sans-serif;color:#222}
+.hp h3{margin:16px 0 8px;padding-bottom:4px;font-size:16px;font-weight:700;color:#1d4ed8;border-bottom:2px solid #dbe3f1}
+.hp h3:first-child{margin-top:4px}
+.hp p{margin:6px 0}
+.hp code{font:13px Consolas,"Courier New",monospace;background:#eef2fa;color:#1e3a8a;padding:1px 6px;border-radius:4px;border:1px solid #dde4f2;white-space:nowrap}
+.hp kbd{font:13px system-ui,"Segoe UI",Arial,sans-serif;background:#fff;border:1px solid #9aa3b5;border-bottom-width:2px;border-radius:4px;padding:1px 8px;white-space:nowrap}
+.hp table{width:100%;border-collapse:collapse;margin:6px 0}
+.hp td{padding:6px 10px;border-bottom:1px solid #e3e7ef;vertical-align:middle}
+.hp td:first-child{width:42%;background:#f4f6fa}
+.hp tr:last-child td{border-bottom:0}
+.hp ul{margin:6px 0;padding-left:22px}.hp li{margin:3px 0}
+.hp .note{margin:8px 0;padding:8px 12px;background:#fff8e6;border-left:4px solid #f5a623;border-radius:3px}
 </style></head><body>
-<div id="mb"></div><div id="tb"></div>
+<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div><div>Консоль:</div><pre id="out"></pre></div>
 <div id="R"><div id="rr"><div id="cw1"><canvas id="cv"></canvas></div><div id="tp" class="hid"><div class="th">Результат выполнения задания</div><canvas id="ct"></canvas></div></div><div id="msg"></div><div id="bar">Скорость: <input type="range" id="sp" min="0" max="100" value="50"><span id="stat">Статус: Задание не выбрано</span></div></div></div>
 <input type="file" id="fo" hidden><input type="file" id="fe" hidden><div id="toast"></div><div id="ac"></div>
@@ -1209,9 +1223,26 @@ const CM='move_up|move_down|move_left|move_right|fill_cell|cell_is_filled|wall_u
 const RX=new RegExp(String.raw`(#[^\n]*|'[^'\n]*'|"[^"\n]*"|\b(?:def|import)\s+\w+|\.\s*\w+)|\b(${CM})\b(?!\s*[(=])`,'g');
 const pre=c=>c.replace(RX,(m,k,n)=>k?m:n+'()');
 const hl=n=>{const ta=$('ta'),L=ta.value.split('\n');let a=0;for(let i=0;i<n-1;i++)a+=L[i].length+1;ta.focus();ta.setSelectionRange(a,a+(L[n-1]||'').length)};
+/* from pyrob.api import ... : строка пропускается (номера строк не меняются), при ошибке в импорте — подсвечивается */
+const PYROB_OK=()=>Object.keys(A).filter(k=>k!='move');
+function pyrobFix(src){const ok=PYROB_OK(),L=src.split('\n');let err=null;
+ for(let i=0;i<L.length&&!err;i++){
+  const m=L[i].match(/^(\s*)from\s+(pyrob(?:\.\w+)*)\s+import\s+(.+?)\s*(?:#.*)?$/);if(!m)continue;
+  const [,ind,mod,list]=m,fail=t=>{err={ln:i+1,msg:t}};
+  if(mod!=='pyrob'&&mod!=='pyrob.api'){fail("модуль '"+mod+"' не найден (используйте from pyrob.api import *)");break}
+  if(list.trim()==='*'){L[i]=ind+'pass';continue}
+  const al=[];
+  for(const part of list.replace(/[()]/g,'').split(',')){
+   const q=part.trim().match(/^(\w+)(?:\s+as\s+(\w+))?$/);
+   if(!q){fail('неверный синтаксис импорта');break}
+   if(!ok.includes(q[1])){fail("имя '"+q[1]+"' не найдено в pyrob.api");break}
+   if(q[2]&&q[2]!==q[1])al.push(q[2]+' = '+q[1])}
+  if(!err)L[i]=ind+(al.length?al.join('; '):'pass')}
+ return{code:L.join('\n'),err}}
 async function run(){
- if(S.busy)return;T[cur].t=$('ta').value;const code=pre($('ta').value);
+ if(S.busy)return;T[cur].t=$('ta').value;const pr=pyrobFix($('ta').value),code=pre(pr.code);
  S.stop=false;$('out').textContent='';msg('');S.x=S.sx;S.y=S.sy;S.dir=0;S.fill=[];
+ if(pr.err){$('out').innerHTML+=`<span style="color:#c00">${esc('Ошибка в строке '+pr.err.ln+': '+pr.err.msg)}</span>`;stat('Ошибка выполнения','red');hl(pr.err.ln);return}
  try{if(S.task){reloadTask();stat('Задание '+S.task.type+S.task.num,'blue')}else stat('Задание не выбрано')}catch(e){toast('Ошибка: '+e)}
  draw();if(S.end!=null)showTarget();S.run=true;S.busy=true;
  try{await Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody('<stdin>',false,code,true),{'*':()=>{if(S.stop)throw 'STOP'}});
@@ -1231,46 +1262,67 @@ function win(id,title,html,w,h,x,y){let e=$(id);if(e){e.style.zIndex=++Z;return 
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',()=>document.removeEventListener('mousemove',mv),{once:true})};
  e.onmousedown=()=>e.style.zIndex=++Z;hd.lastChild.onclick=()=>e.remove();return e}
 function showTarget(){tsig='';drawT()}
-const HELP=`СПРАВКА ПО КОМАНДАМ РОБОТА
+const HELP_HTML=`<div class="hp">
+<h3>Движение робота</h3>
+<table>
+<tr><td><code>move_up()</code></td><td>на одну клетку вверх</td></tr>
+<tr><td><code>move_down()</code></td><td>на одну клетку вниз</td></tr>
+<tr><td><code>move_left()</code></td><td>на одну клетку влево</td></tr>
+<tr><td><code>move_right()</code></td><td>на одну клетку вправо</td></tr>
+</table>
 
-1. Команды перемещения:
-   - move_up() - на одну клетку вверх
-   - move_down() - на одну клетку вниз
-   - move_left() - на одну клетку влево
-   - move_right() - на одну клетку вправо
+<h3>Положение робота</h3>
+<table>
+<tr><td><code>pos()</code></td><td>номер текущей клетки</td></tr>
+<tr><td><code>goto(x)</code></td><td>перейти в клетку с номером <b>x</b></td></tr>
+<tr><td><code>goto(m, n)</code></td><td>перейти в строку <b>m</b>, столбец <b>n</b></td></tr>
+<tr><td><code>start_pos(x)</code> / <code>start_pos(m, n)</code></td><td>начальная позиция</td></tr>
+<tr><td><code>add_end_position(x)</code> / <code>add_end_position(m, n)</code></td><td>конечная позиция</td></tr>
+</table>
 
-2. Команды определения положения:
-   - pos() - номер текущей клетки
-   - goto(x) - перемещение в клетку с номером x
-   - goto(m, n) - перемещение в клетку в строке m и столбце n
-   - start_pos(x) / start_pos(m,n) - начальная позиция
-   - add_end_position(x) / add_end_position(m,n) - конечная позиция
+<h3>Клетки и поле</h3>
+<table>
+<tr><td><code>fill_cell()</code></td><td>закрасить текущую клетку</td></tr>
+<tr><td><code>mark_cell_to_fill(x)</code> / <code>mark_cell_to_fill(m, n)</code></td><td>отметить клетку для закрашивания</td></tr>
+<tr><td><code>add_wall('направление', x)</code> / <code>add_wall('направление', m, n)</code></td><td>добавить стену</td></tr>
+<tr><td><code>field(m, n)</code></td><td>создать поле из <b>m</b> строк и <b>n</b> столбцов</td></tr>
+<tr><td><code>task('for5')</code></td><td>загрузить задание</td></tr>
+</table>
 
-3. Команды работы с клетками:
-   - fill_cell() - закрасить текущую клетку
-   - mark_cell_to_fill(x) / mark_cell_to_fill(m,n) - отметить клетку для закрашивания
-   - add_wall('направление',x) / add_wall('направление',m,n) - добавить стену
-   - field(m,n) - создать поле m на n клеток
-   - task('for5') - загрузить задание
+<!--TASKS-->
+<h3>Условия</h3>
+<table>
+<tr><td><code>wall_up()</code> <code>wall_down()</code><br><code>wall_left()</code> <code>wall_right()</code></td><td>есть ли стена с этой стороны</td></tr>
+<tr><td><code>cell_is_filled()</code></td><td>закрашена ли текущая клетка</td></tr>
+</table>
+<div class="note">Если стены нет или клетка не закрашена, используйте <code>not</code>:<br><code>not wall_up()</code>, <code>not cell_is_filled()</code></div>
 
-4. Условия:
-   - wall_up(), wall_down(), wall_left(), wall_right() - есть ли стена с этой стороны
-   - cell_is_filled() - закрашена ли текущая клетка
-   - если стены нет или клетка не закрашена, используйте not:
-     not wall_up(), not cell_is_filled()
+<h3>Выполнение программы</h3>
+<table>
+<tr><td><kbd>F5</kbd></td><td>запуск программы</td></tr>
+<tr><td><kbd>Стоп</kbd></td><td>остановка программы</td></tr>
+</table>
 
-5. Управление выполнением:
-   - F5 - запуск программы, кнопка «Стоп» - остановка
+<h3>Работа с кодом</h3>
+<table>
+<tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>отменить</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td><td>повторить</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>сохранить</td></tr>
+</table>
+<ul>
+<li>У каждой вкладки своё задание и своё поле робота.</li>
+<li>Задания лежат в файле <code>tasks.js</code> рядом с <code>robot.html</code>.</li>
+</ul>
 
-6. Работа с кодом:
-   - Ctrl+Z - отменить, Ctrl+Shift+Z - повторить, Ctrl+S - сохранить
-   - у каждой вкладки своё задание и своё поле робота
-   - задания лежат в файле tasks.js рядом с robot.html
-
-7. Автоподсказки:
-   - введите 2 буквы команды (например, mo или wa)
-   - ↑/↓ - выбор, Enter или Tab - вставить, Esc - закрыть`;
-const showHelp=()=>win('wh','Справка',`<pre style="margin:0;white-space:pre-wrap;font:13px Consolas,monospace">${esc(HELP)}</pre>`,500,innerHeight-140,20,70);
+<h3>Автоподсказки</h3>
+<ul>
+<li>Введите 2 буквы команды (например, <code>mo</code> или <code>wa</code>).</li>
+<li><kbd>↑</kbd> / <kbd>↓</kbd> — выбор, <kbd>Enter</kbd> или <kbd>Tab</kbd> — вставить, <kbd>Esc</kbd> — закрыть.</li>
+</ul>
+</div>`;
+const tasksHelp=()=>{const t=TYPES.filter(k=>TC[k]);if(!t.length)return '';
+ return "<h3>Задания</h3><p>Загрузить задание можно командой <code>task('for1')</code> или из меню «Задания». Категории заданий:</p><table>"+t.map(k=>`<tr><td><code>${k}</code></td><td>${k}1 … ${k}${TC[k]} (${plz(TC[k])})</td></tr>`).join('')+"</table><p>При вводе <code>task(</code> редактор сам подскажет категории и номера заданий.</p>"};
+const showHelp=()=>win('wh','Справка',HELP_HTML.replace('<!--TASKS-->',tasksHelp()),560,innerHeight-140,20,70);
 async function rc(c){if(S.moving)return;const was=S.run;S.run=true;try{await A[c]();const ta=$('ta');ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
  document.execCommand('insertText',false,(ta.value&&!ta.value.endsWith('\n')?'\n':'')+c+'()\n');T[cur].t=ta.value;persist()}catch(e){toast('Робот врезался в стену')}finally{S.run=was}}
 const remote=()=>{const e=win('wr','Пульт управления роботом',`<div class="rc"><i></i><button data-c="move_up">↑</button><i></i><button data-c="move_left">←</button><button data-c="fill_cell" style="background:green;font-size:13px">FILL</button><button data-c="move_right">→</button><i></i><button data-c="move_down">↓</button></div>`,230,0,innerWidth-270,innerHeight-300);
@@ -1303,8 +1355,8 @@ function loadEnvFile(txt){let e;try{e=JSON.parse(txt)}catch(_){try{e=JSON.parse(
 const AC=[['move_up','вверх на 1 клетку',2],['move_down','вниз',2],['move_left','влево',2],['move_right','вправо',2],['fill_cell','закрасить клетку',2],
 ['cell_is_filled','клетка закрашена?',2],['wall_up','сверху стена?',2],['wall_down','снизу стена?',2],['wall_left','слева стена?',2],['wall_right','справа стена?',2],
 ['pos','номер текущей клетки',2],['goto','goto(x) или goto(m, n)',1],['start_pos','start_pos(m, n)',1],['add_end_position','add_end_position(m, n)',1],
-['mark_cell_to_fill','mark_cell_to_fill(m, n)',1],['add_wall',"add_wall('left', m, n)",1],['field','field(m, n)',1],['task',"task('for1')",1]];
-const ac=$('ac');let acL=[],acI=0,acS=0;
+['mark_cell_to_fill','mark_cell_to_fill(m, n)',1],['add_wall',"add_wall('left', m, n)",1],['field','field(m, n)',1],['task',"task('for1') — загрузить задание",1]];
+const ac=$('ac');let acL=[],acI=0,acS=0,acQ='';
 const acHide=()=>{ac.style.display='none';acL=[]};
 function caretXY(ta,p){const m=$('mir')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'mir'})),s=getComputedStyle(ta);
  Object.assign(m.style,{width:ta.clientWidth+'px',fontFamily:s.fontFamily,fontSize:s.fontSize,fontWeight:s.fontWeight,letterSpacing:s.letterSpacing,lineHeight:s.lineHeight,tabSize:s.tabSize,paddingTop:s.paddingTop,paddingRight:s.paddingRight,paddingBottom:s.paddingBottom,paddingLeft:s.paddingLeft});
@@ -1313,14 +1365,25 @@ function acDraw(){ac.innerHTML=acL.map((c,i)=>`<div class="ai${i==acI?' on':''}"
  const ta=$('ta'),r=ta.getBoundingClientRect(),q=caretXY(ta,acS);ac.style.display='block';const h=ac.offsetHeight,w=ac.offsetWidth;
  let x=r.left+ta.clientLeft+q.x-ta.scrollLeft,y=r.top+ta.clientTop+q.y+q.h-ta.scrollTop;
  if(y+h>innerHeight-8)y-=q.h+h;if(x+w>innerWidth-8)x=innerWidth-w-8;ac.style.left=Math.max(4,x)+'px';ac.style.top=Math.max(4,y)+'px'}
+const TYPES=['algo','for','while','if','cif'];
+const plz=n=>{const a=n%10,b=n%100;return n+(a==1&&b!=11?' задание':a>=2&&a<=4&&(b<10||b>=20)?' задания':' заданий')};
 function acUpdate(){const ta=$('ta'),p=ta.selectionStart;if(p!=ta.selectionEnd)return acHide();
+ {const v0=ta.value.slice(0,p),tm=/\btask\(\s*(['"]?)([A-Za-z]*\d*)$/.exec(v0.slice(v0.lastIndexOf('\n')+1));
+  if(tm){acQ=tm[1];const w=tm[2].toLowerCase(),ty=w.replace(/\d/g,''),np=w.replace(/\D/g,'');
+   if(TC[ty]&&(np||w==ty))acL=[...Array(TC[ty])].map((_,i)=>i+1).filter(n=>String(n).startsWith(np)&&ty+n!=w).map(n=>[ty+n,'задание №'+n,0,'n']).slice(0,10);
+   else if(!np)acL=TYPES.filter(k=>TC[k]&&k.startsWith(w)).map(k=>[k,plz(TC[k])+' ('+k+'1…'+k+TC[k]+')',0,'t']);
+   else acL=[];
+   if(!acL.length)return acHide();acI=0;acS=p-tm[2].length;return acDraw()}}
  const v=ta.value,m=/[A-Za-z_]\w*$/.exec(v.slice(0,p));if(!m||m[0].length<2)return acHide();
  const before=v.slice(v.lastIndexOf('\n',p-1)+1,p-m[0].length);
  if(/#|\.\s*$/.test(before)||(before.match(/['"]/g)||[]).length%2||/\b(def|import|from|class)\s+$/.test(before))return acHide();
  const w=m[0].toLowerCase();acL=AC.filter(c=>c[0].startsWith(w)&&c[0]!=w).slice(0,8);
  if(!acL.length)return acHide();acI=0;acS=p-m[0].length;acDraw()}
 function acPick(i){const c=acL[i],ta=$('ta'),p=ta.selectionStart;ta.focus();ta.setSelectionRange(acS,p);
- document.execCommand('insertText',false,c[0]+(c[2]?'()':''));if(c[2]==1){const k=ta.selectionStart-1;ta.setSelectionRange(k,k)}acHide()}
+ if(c[3]){const q=acQ||"'",ins=t=>document.execCommand('insertText',false,t);ins((acQ?'':"'")+c[0]);
+  if(c[3]=='n'){if((ta.value[ta.selectionStart]||'')!=q)ins(q);if((ta.value[ta.selectionStart]||'')!=')')ins(')')}
+  acHide();if(c[3]=='t')acUpdate();return}
+ document.execCommand('insertText',false,c[0]+(c[2]?'()':''));if(c[2]==1){const k=ta.selectionStart-1;ta.setSelectionRange(k,k)}acHide();if(c[0]=='task')acUpdate()}
 function acKey(e){if(ac.style.display!='block'||!acL.length||e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return false;
  if(e.key=='ArrowDown'||e.key=='ArrowUp'){e.preventDefault();acI=(acI+(e.key=='ArrowDown'?1:acL.length-1))%acL.length;acDraw();return true}
  if(e.key=='Enter'||e.key=='Tab'){e.preventDefault();acPick(acI);return true}
