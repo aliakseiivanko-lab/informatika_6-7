@@ -1462,8 +1462,9 @@ addEventListener('keydown',ev=>{if(ev.key=='Escape')closeAll()});
 const tk=t=>[t,TC[t]?[...Array(TC[t])].map((_,i)=>['Задание '+(i+1),()=>loadTask(t,i+1)]):[['нет заданий (проверьте tasks.js)',()=>{}]]];
 [['Файл',[['Открыть',()=>$('fo').click()],['Сохранить',saveF]]],
  ['Окружение',[['Сохранить',()=>{saveEnv();dl('environment.env',JSON.stringify(S.env))}],['Загрузить',()=>$('fe').click()],['Изменить',openEditor]]],
- ['Помощь',[['СПРАВКА',showHelp]]],['Задания',['algo','for','while','if','cif'].map(tk)],
- ['Шрифт',[['Выбрать размер шрифта',()=>{const v=parseInt(prompt('Введите размер шрифта:',15));if(v>0){$('ta').style.fontSize=v+'px';hlRender()}}]]]
+ ['Задания',['algo','for','while','if','cif'].map(tk)],
+ ['Шрифт',[['Выбрать размер шрифта',()=>{const v=parseInt(prompt('Введите размер шрифта:',15));if(v>0){$('ta').style.fontSize=v+'px';hlRender()}}]]],
+ ['Помощь',[['СПРАВКА',showHelp]]]
 ].forEach(([l,it])=>{const m=document.createElement('div'),dd=menu(it);let ct=0;m.className='m';m.append(l,dd);
  m.onmouseenter=()=>{clearTimeout(ct);if(m.classList.contains('shut'))return;document.querySelectorAll('.m.open').forEach(x=>{if(x!==m)x.classList.remove('open')});m.classList.add('open');place(dd)};
  m.onmouseleave=()=>{m.classList.remove('shut');clearTimeout(ct);ct=setTimeout(()=>{m.classList.remove('open');m.querySelectorAll('.it.open').forEach(x=>x.classList.remove('open'))},CLOSE)};
