@@ -1305,7 +1305,11 @@ window.__rb=()=>{const m={};for(const k in RB)m[k]=wrap(RB[k]);return m};
 Sk.builtinFiles.files['src/lib/rb.js']='var $builtinmodule=function(){return window.__rb()}';Sk.builtinFiles.files['src/lib/robot_tasks.py']=PY;
 const CM='move_up|move_down|move_left|move_right|fill_cell|cell_is_filled|wall_up|wall_down|wall_left|wall_right';
 const RX=new RegExp(String.raw`(#[^\n]*|'[^'\n]*'|"[^"\n]*"|\b(?:def|import)\s+\w+|\.\s*\w+)|\b(${CM})\b(?!\s*[(=])`,'g');
-const pre=c=>c.replace(RX,(m,k,n)=>k?m:n+'()');
+/* Команды пульта: в редакторе видны как up/down/left/right/fill, но за словом стоит невидимая метка (U+200B).
+   Только слова с меткой превращаются в команды; набранные вручную left/right/... не работают. */
+const MK='\u200b',RM={up:'move_up',down:'move_down',left:'move_left',right:'move_right',fill:'fill_cell'},RMK=Object.fromEntries(Object.entries(RM).map(([k,v])=>[v,k]));
+const RXR=/(#[^\n]*|'[^'\n]*'|"[^"\n]*"|\.\s*\w+)|\b(up|down|left|right|fill)\u200b/g;
+const pre=c=>c.replace(RX,(m,k,n)=>k?m:n+'()').replace(RXR,(m,k,n)=>k?m:RM[n]+'()').replace(/\u200b/g,'');
 const hl=n=>{const ta=$('ta'),L=ta.value.split('\n');let a=0;for(let i=0;i<n-1;i++)a+=L[i].length+1;ta.focus();ta.setSelectionRange(a,a+(L[n-1]||'').length)};
 /* from pyrob.api import ... : строка пропускается (номера строк не меняются), при ошибке в импорте — подсвечивается */
 const PYROB_OK=()=>Object.keys(A).filter(k=>k!='move');
@@ -1409,9 +1413,13 @@ const tasksHelp=()=>{const t=TYPES.filter(k=>TC[k]);if(!t.length)return '';
  return "<h3>Задания</h3><p>Загрузить задание можно командой <code>task('for1')</code> или из меню «Задания». Категории заданий:</p><table>"+t.map(k=>`<tr><td><code>${k}</code></td><td>${k}1 … ${k}${TC[k]} (${plz(TC[k])})</td></tr>`).join('')+"</table><p>При вводе <code>task(</code> редактор сам подскажет категории и номера заданий.</p>"};
 const showHelp=()=>win('wh','Справка',HELP_HTML.replace('<!--TASKS-->',tasksHelp()),560,innerHeight-140,20,70);
 async function rc(c){if(S.moving)return;const was=S.run;S.run=true;try{await A[c]();const ta=$('ta');ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
- document.execCommand('insertText',false,(ta.value&&!ta.value.endsWith('\n')?'\n':'')+c+'()\n');T[cur].t=ta.value;persist()}catch(e){toast('Робот врезался в стену')}finally{S.run=was}}
+ document.execCommand('insertText',false,(ta.value&&!ta.value.endsWith('\n')?'\n':'')+RMK[c]+MK+'\n');T[cur].t=ta.value;persist();ta.blur()}catch(e){toast('Робот врезался в стену')}finally{S.run=was}}
 const remote=()=>{const e=win('wr','Пульт управления роботом',`<div class="rc"><i></i><button data-c="move_up">↑</button><i></i><button data-c="move_left">←</button><button data-c="fill_cell" style="background:green;font-size:13px">FILL</button><button data-c="move_right">→</button><i></i><button data-c="move_down">↓</button></div>`,230,0,innerWidth-270,innerHeight-300);
- e.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>rc(b.dataset.c))};
+ e.querySelectorAll('button[data-c]').forEach(b=>{b.onmousedown=ev=>ev.preventDefault();b.onclick=()=>rc(b.dataset.c)})};
+/* пока пульт открыт: стрелки — движение, пробел — закрасить (если курсор не в поле ввода) */
+const RKEY={ArrowUp:'move_up',ArrowDown:'move_down',ArrowLeft:'move_left',ArrowRight:'move_right',' ':'fill_cell'};
+addEventListener('keydown',e=>{const c=RKEY[e.key];if(!c||!$('wr')||S.busy||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.isComposing)return;
+ const t=e.target,g=t&&t.tagName;if(g=='INPUT'||g=='TEXTAREA'||g=='SELECT'||(t&&t.isContentEditable))return;e.preventDefault();rc(c)});
 /* ---------- редактор окружения ---------- */
 const strip=()=>{const b=bw(),w={};for(const d in b)w[d]=S.wall[d].filter(c=>!b[d].includes(c));return w};
 function openEditor(){
@@ -1484,7 +1492,7 @@ const HK=new Set('and as assert break class continue def del elif else except Fa
  hv=$('hv');
 function hlRender(){const ta=$('ta'),v=ta.value;let o='',i=0,m;HX.lastIndex=0;
  while((m=HX.exec(v))){o+=esc(v.slice(i,m.index));i=HX.lastIndex;const t=m[0],
-  c=m[1]?'hc':m[2]?'hs':m[3]?'':HK.has(t)?'hk':HR.has(t)?'hr':HB.has(t)?'hb':'';
+  c=m[1]?'hc':m[2]?'hs':m[3]?'':HK.has(t)?'hk':(HR.has(t)||(m[4]&&RM.hasOwnProperty(t)&&v[HX.lastIndex]===MK))?'hr':HB.has(t)?'hb':'';
   o+=c?`<span class="${c}">${esc(t)}</span>`:esc(t)}
  o+=esc(v.slice(i));if(v.endsWith('\n'))o+=' ';hv.innerHTML=o;
  hv.style.fontSize=getComputedStyle(ta).fontSize;hv.style.paddingRight=(8+ta.offsetWidth-ta.clientWidth-2*ta.clientLeft)+'px';
@@ -1517,7 +1525,8 @@ const saveF=()=>{const n=T[cur].n;dl(/\.\w+$/.test(n)?n:n+'.py',$('ta').value)};
 $('fo').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>newTab(f.name,t));e.target.value=''};
 $('fe').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(loadEnvFile);e.target.value=''};
 $('ta').oninput=()=>{T[cur].t=$('ta').value;persist();acUpdate();hlRender()};
-$('ta').onkeydown=e=>{if(acKey(e))return;if(e.key=='Tab'){e.preventDefault();document.execCommand('insertText',false,'    ')}};
+$('ta').onkeydown=e=>{if(acKey(e))return;if(e.key=='Tab'){e.preventDefault();document.execCommand('insertText',false,'    ')}
+ else if(e.key=='Backspace'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const ta=$('ta'),p=ta.selectionStart;if(p==ta.selectionEnd&&ta.value[p-1]===MK){const m=/(?:up|down|left|right|fill)\u200b$/.exec(ta.value.slice(0,p));if(m){e.preventDefault();ta.setSelectionRange(p-m[0].length,p);document.execCommand('delete')}}}};
 addEventListener('keydown',e=>{if(e.key=='F5'){e.preventDefault();run()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='s'){e.preventDefault();saveF()}});
 /* ---------- меню и панель инструментов ---------- */
 /* Меню: открытие по наведению, но без «дёрганья» — переключение подпунктов с задержкой,
