@@ -62,9 +62,8 @@ canvas{display:block}
 #tk-chk{font-weight:600;border-color:#4a9a5a!important}
 #tk-h{display:none;margin-top:6px;padding:5px 8px;background:#eef6ff;border-radius:5px;line-height:1.45}
 #tk-res{margin-top:6px;line-height:1.45}#tk-res .ok{color:#15803d;font-weight:600}#tk-res .bad{color:#b91c1c;font-weight:600}
-#mb .home{display:flex;align-items:center;gap:6px;padding:5px 14px;color:#1d4ed8;font-weight:600;text-decoration:none;background:#f3f6fc;border-right:1px solid #ccd;white-space:nowrap}#mb .home:hover,#mb .home:focus-visible{background:#e3edfb;outline:none}
 </style></head><body>
-<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a></div><div id="tb"></div>
+<div id="mb"></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="task" class="hid"><div class="th"><b id="tk-t"></b><button id="tk-x" title="Закрыть задание">✕</button></div><div id="tk-b"></div></div><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div><div>Консоль:</div><pre id="out"></pre></div>
 <div id="R"><div id="rr"><div id="cw1"><div class="th">Поле черепахи<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><div id="cvw"><canvas id="cv"></canvas></div></div><div id="tp" class="hid"><div class="th">Результат выполнения задания<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><canvas id="ct"></canvas></div></div><div id="info"></div><div id="msg"></div><div id="bar">Скорость: <input type="range" id="sp" min="0" max="100" value="30"><span id="stat">Статус: Готово к работе</span></div></div></div>
 <input type="file" id="fo" hidden><div id="toast"></div><div id="ac"></div>
@@ -1348,7 +1347,7 @@ async function run(){
   $('out').innerHTML+=`<span style="color:#c00">${esc((ln?'Ошибка в строке '+ln+': ':'')+m)}</span>`;stat('Ошибка выполнения','red');if(ln)hl(ln)}}
  finally{S.run=S.busy=false;W.tur.forEach(t=>t.live=null);draw();if(DOCHK){DOCHK=false;checkTask()}}}
 const stop=()=>{S.stop=true;S.run=false};
-function reset(){stop();S.cx=S.cy=0;S.R=250;newWorld();$('out').textContent='';msg('');DOCHK=false;if(T[cur]){T[cur].task=null;T[cur].rs=false}syncTask();stat('Задание и поле сброшены');draw()}
+function reset(){stop();S.cx=S.cy=0;newWorld();$('out').textContent='';msg('');resShow(!!TK);stat('Поле очищено');draw()}
 /* ---------- окна, справка ---------- */
 const HT=(rows)=>'<table>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>';
 const HS=(t,b)=>'<h4>'+t+'</h4>'+b;
@@ -1937,6 +1936,7 @@ new ResizeObserver(()=>drawT()).observe($('ct'));
 
 /* ---------- меню и панель инструментов ---------- */
 [['Файл',[['Открыть',()=>$('fo').click()],['Сохранить',saveF]]],
+ ['Примеры',EX.map(([n,c])=>[n,()=>newTab(n,c)])],
  ['Задания',TASKMENU],
  ['Вид',[['Вернуть поле в центр (0, 0)',()=>{S.cx=S.cy=0;need()}],['Показать / скрыть сетку',()=>{S.grid=!S.grid;need()}],['Показать / скрыть координаты черепахи',()=>{S.mark=!S.mark;need()}],['Размер поля',[50,100,250,500,1000].map(r=>['±'+r,()=>{S.R=r;need()}])]]],
  ['Шрифт',[['Выбрать размер шрифта',()=>{const v=parseInt(prompt('Введите размер шрифта:',15));if(v>0){$('ta').style.fontSize=v+'px';hlRender()}}]]],
@@ -1947,7 +1947,7 @@ new ResizeObserver(()=>drawT()).observe($('ct'));
  m.onclick=ev=>{if(ev.target===m){m.classList.add('open');place(dd)}};
  $('mb').append(m)});
 [['new_tab','Создать новую вкладку',()=>newTab()],['close_tab','Закрыть текущую вкладку',closeTab],['save','Сохранить файл',saveF],['open','Открыть файл',()=>$('fo').click()],['start','Запустить код (F5)',run],['end','Остановить выполнение',stop],
- ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Сбросить задание и поле',reset]
+ ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Очистить поле',reset]
 ].forEach(([ic,t,f])=>{const b=document.createElement('button');b.title=t;b.innerHTML=`<img src="${I[ic]}" alt="">`;b.onmousedown=e=>e.preventDefault();b.onclick=f;$('tb').append(b)});
 $('tb').insertAdjacentHTML('beforeend','<span id="sel">Выбранное задание: None</span>');
 const spd=v=>S.ups=60+4940*(v/100)**2;$('sp').oninput=()=>spd(+$('sp').value);spd(+$('sp').value);

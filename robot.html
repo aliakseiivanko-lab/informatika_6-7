@@ -1146,6 +1146,7 @@ def run_task(name, num):
 `;
 if(typeof ROBOT_TASKS!='string')setTimeout(()=>toast('Не найден файл tasks.js — положите его рядом с robot.html'),300);
 const S={m:5,n:5,x:0,y:0,sx:0,sy:0,dir:0,ox:0,oy:0,fill:[],tofill:[],end:null,task:null,env:null,run:false,stop:false,busy:false,moving:false,speed:.4};
+const D={on:false,tok:0,x:0,y:0,ox:0,oy:0,dir:0,fill:[]};
 const RU={left:'влево',right:'вправо',up:'вверх',down:'вниз'};
 const bw=()=>{const w={left:[],right:[],up:[],down:[]},{m,n}=S;for(let i=1;i<=m*n;i++){if((i-1)%n==0)w.left.push(i);if(i%n==0)w.right.push(i);if(i<=n)w.up.push(i);if(i>n*(m-1))w.down.push(i)}return w};
 S.wall=bw();
@@ -1159,14 +1160,14 @@ function board(c,mode,M){
  const w=c.clientWidth,h=c.clientHeight,r=devicePixelRatio||1;if(!w||!h)return;
  if(c.width!=Math.round(w*r)||c.height!=Math.round(h*r)){c.width=Math.round(w*r);c.height=Math.round(h*r)}
  const g=c.getContext('2d');g.setTransform(r,0,0,r,0,0);g.clearRect(0,0,w,h);
- const o=mode=='target'?8:24,cs=Math.max(10,Math.min((w-2*o)/M.n,(h-2*o)/M.m)),gx=mode=='main'?o:(w-cs*M.n)/2,gy=mode=='main'?o:(h-cs*M.m)/2;
+ const o=mode=='target'||mode=='demo'?8:24,cs=Math.max(10,Math.min((w-2*o)/M.n,(h-2*o)/M.m)),gx=mode=='main'?o:(w-cs*M.n)/2,gy=mode=='main'?o:(h-cs*M.m)/2;
  M.g={gx,gy,cs};const X=j=>gx+j*cs,Y=i=>gy+i*cs,cell=k=>[(k-1)%M.n,((k-1)/M.n)|0];
- if(mode!='target'){g.fillStyle='#000';g.font='bold 12px Arial';g.textAlign='center';g.textBaseline='middle';
+ if(mode!='target'&&mode!='demo'){g.fillStyle='#000';g.font='bold 12px Arial';g.textAlign='center';g.textBaseline='middle';
   for(let j=0;j<M.n;j++)g.fillText(j+1,X(j)+cs/2,gy-11);for(let i=0;i<M.m;i++)g.fillText(i+1,gx-11,Y(i)+cs/2)}
  g.strokeStyle='#999';g.lineWidth=1;g.beginPath();
  for(let i=0;i<=M.m;i++){g.moveTo(X(0),Y(i));g.lineTo(X(M.n),Y(i))}for(let j=0;j<=M.n;j++){g.moveTo(X(j),Y(0));g.lineTo(X(j),Y(M.m))}g.stroke();
  (M.fill||[]).forEach(k=>{const[x,y]=cell(k);g.fillStyle='#2e9e2e';g.fillRect(X(x),Y(y),cs,cs);g.strokeStyle='#000';g.strokeRect(X(x),Y(y),cs,cs)});
- M.tofill.forEach(k=>{const[x,y]=cell(k);if(mode=='target'){g.fillStyle='#90ee90';g.fillRect(X(x),Y(y),cs,cs);g.strokeStyle='#999';g.strokeRect(X(x),Y(y),cs,cs)}else{g.fillStyle='green';g.fillRect(X(x)+cs*.375,Y(y)+cs*.375,cs*.25,cs*.25)}});
+ M.tofill.forEach(k=>{const[x,y]=cell(k);if(mode=='demo'&&M.fill.includes(k))return;if(mode=='target'||mode=='demo'){g.fillStyle='#90ee90';g.fillRect(X(x),Y(y),cs,cs);g.strokeStyle='#999';g.strokeRect(X(x),Y(y),cs,cs)}else{g.fillStyle='green';g.fillRect(X(x)+cs*.375,Y(y)+cs*.375,cs*.25,cs*.25)}});
  g.strokeStyle='#000';g.lineWidth=3;g.beginPath();
  for(const d in M.wall)M.wall[d].forEach(k=>{const[x,y]=cell(k);
   if(d=='left'){g.moveTo(X(x),Y(y));g.lineTo(X(x),Y(y+1))}else if(d=='right'){g.moveTo(X(x+1),Y(y));g.lineTo(X(x+1),Y(y+1))}
@@ -1174,12 +1175,12 @@ function board(c,mode,M){
  if(mode=='edit')g.rect(X(0),Y(0),cs*M.n,cs*M.m);g.stroke();
  if(M.end!=null&&mode!='target'){const[x,y]=cell(M.end),s=mode=='edit'?cs*.2:cs*.125,f=mode=='edit'?(cs-s)/2:s;g.fillStyle='#000';g.fillRect(X(x)+f,Y(y)+f,s,s)}
  let rx,ry;if(mode=='target'){if(M.end==null)return;[rx,ry]=cell(M.end)}else{rx=M.x+(M.ox||0);ry=M.y+(M.oy||0)}
- const s=cs*.8;g.save();g.translate(X(rx)+cs/2,Y(ry)+cs/2);g.rotate((mode=='main'?M.dir:0)*Math.PI/180);if(RI.complete)g.drawImage(RI,-s/2,-s/2,s,s);g.restore()}
+ const s=cs*.8;g.save();g.translate(X(rx)+cs/2,Y(ry)+cs/2);g.rotate((mode=='main'||mode=='demo'?M.dir:0)*Math.PI/180);if(RI.complete)g.drawImage(RI,-s/2,-s/2,s,s);g.restore()}
 let tsig='';
-const drawT=()=>{const c=$('ct');if(!c)return;const k=JSON.stringify([S.m,S.n,S.wall,S.tofill,S.end])+c.clientWidth+'x'+c.clientHeight;if(k==tsig)return;tsig=k;board(c,'target',{...S,fill:[]})};
+const drawT=()=>{const c=$('ct');if(!c)return;if(D.on){board(c,'demo',{...S,fill:D.fill,x:D.x,y:D.y,ox:D.ox,oy:D.oy,dir:D.dir});tsig='';return}const k=JSON.stringify([S.m,S.n,S.wall,S.tofill,S.end])+c.clientWidth+'x'+c.clientHeight;if(k==tsig)return;tsig=k;board(c,'target',{...S,fill:[]})};
 const draw=()=>{board($('cv'),'main',S);drawT()};
 /* панель «Результат выполнения задания»: показывается после первого неверного выполнения, скрывается при смене задания / пустом поле */
-function resShow(v){const p=$('tp');if(p.classList.contains('hid')==!v)return;p.classList.toggle('hid',!v);tsig='';draw()}
+function resShow(v){if(!v)demoStop();const p=$('tp');if(p.classList.contains('hid')==!v)return;p.classList.toggle('hid',!v);tsig='';draw()}
 const sameTask=(t,n)=>!!(S.task&&S.task.type==t&&S.task.num==n);
 /* ---------- робот и его команды ---------- */
 function move(dx,dy,ang){return new Promise(res=>{S.dir=ang;const T=S.speed*1000;if(S.stop){S.x+=dx;S.y+=dy;draw();return res()}
@@ -1201,7 +1202,7 @@ const A={move_up:()=>step(0,-1,0,'up'),move_down:()=>step(0,1,180,'down'),move_l
   if(!sameTask(ty,num))resShow(false);S.task={type:ty,num};clearTask();pyTask(ty+'_task_'+num,num);sel(ty+num);stat('Задание '+ty+num)}};
 ['left','right','up','down'].forEach(d=>{A['wall_'+d]=()=>wallf(d)});
 /* ---------- окружение и задания ---------- */
-function clearTask(){S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.x=S.sx;S.y=S.sy;S.dir=0;draw()}
+function clearTask(){demoStop();S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.x=S.sx;S.y=S.sy;S.dir=0;draw()}
 function saveEnv(){S.env=JSON.parse(JSON.stringify({robot_start_pos:[S.x,S.y],filled_cells:S.fill,walls:S.wall,grid_size:[S.m,S.n],end_position:S.end,cells_to_fill:S.tofill}))}
 function loadEnv(){const e=S.env;if(!e)return;[S.m,S.n]=e.grid_size;S.x=S.sx=e.robot_start_pos[0];S.y=S.sy=e.robot_start_pos[1];S.fill=[...e.filled_cells];S.tofill=[...e.cells_to_fill];S.end=e.end_position;S.wall=JSON.parse(JSON.stringify(e.walls));S.dir=0}
 function pyTask(name,num){const m=Sk.importModule('robot_tasks',false,false);Sk.misceval.callsimArray(m.$d.run_task,[new Sk.builtin.str(name),new Sk.builtin.int_(num)]);draw()}
@@ -1209,6 +1210,89 @@ function loadTask(t,n){if(!sameTask(t,n))resShow(false);S.task={type:t,num:n};ms
 function reloadTask(){S.fill=[];S.tofill=[];S.end=null;S.wall=bw();if(S.task.type=='custom')loadEnv();else pyTask(S.task.type+'_task_'+S.task.num,S.task.num);draw()}
 function check(){const a=S.tofill.every(c=>S.fill.includes(c)),b=S.fill.every(c=>S.tofill.includes(c)),p=pos()==S.end;
  if(p&&a&&b){stat('Задание выполнено!','green');msg('')}else{const r=[];if(!p)r.push('- Робот не достиг конечной позиции');if(!a)r.push('- Не все клетки закрашены');if(!b)r.push('- Есть лишние закрашенные клетки');msg('Задание не выполнено:\n'+r.join('\n'));stat('Задание не выполнено','red');if(S.task)resShow(true)}}
+/* ---------- «Результат выполнения задания»: при запуске показывает, как правильно пройти задание ---------- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const DIRS=[{n:'up',dx:0,dy:-1,a:0},{n:'down',dx:0,dy:1,a:180},{n:'left',dx:-1,dy:0,a:-90},{n:'right',dx:1,dy:0,a:90}];
+function demoStop(){D.on=false;D.tok++}
+/* Кратчайший маршрут: обойти все клетки для закраски (закрасить только их) и прийти в конечную клетку.
+   Поле небольшое, поэтому: BFS между ключевыми клетками + перебор порядка обхода (динамика по подмножествам). */
+function solve(){
+ const{m,n}=S,N=m*n,W=S.wall,
+  can=(p,d)=>d=='left'?(p-1)%n>0&&!W.left.includes(p)&&!W.right.includes(p-1):d=='right'?p%n>0&&!W.right.includes(p)&&!W.left.includes(p+1):
+   d=='down'?p+n<=N&&!W.down.includes(p)&&!W.up.includes(p+n):p-n>=1&&!W.up.includes(p)&&!W.down.includes(p-n),
+  bfs=s=>{const dist=new Array(N+1).fill(Infinity),prv=new Array(N+1).fill(null);dist[s]=0;const q=[s];
+   for(let h=0;h<q.length;h++){const p=q[h];for(const d of DIRS){if(!can(p,d.n))continue;const np=p+d.dx+d.dy*n;if(np<1||np>N||dist[np]!==Infinity)continue;dist[np]=dist[p]+1;prv[np]=[p,d];q.push(np)}}
+   return{dist,prv}};
+ const T=[...new Set(S.tofill)],K=T.length;if(!K&&S.end==null)return null;
+ const nodes=[pos(),...T];if(S.end!=null)nodes.push(S.end);
+ const B=nodes.map(bfs),e=S.end!=null?K+1:-1,d=(i,j)=>B[i].dist[nodes[j]],order=[];
+ if(K){
+  if(K<=12){const F=1<<K,dp=Array.from({length:F},()=>new Array(K).fill(Infinity)),pr=Array.from({length:F},()=>new Array(K).fill(-1));
+   for(let i=0;i<K;i++)dp[1<<i][i]=d(0,i+1);
+   for(let s=1;s<F;s++)for(let i=0;i<K;i++){const c=dp[s][i];if(c===Infinity||!(s>>i&1))continue;
+    for(let j=0;j<K;j++){if(s>>j&1)continue;const t=s|1<<j,v=c+d(i+1,j+1);if(v<dp[t][j]){dp[t][j]=v;pr[t][j]=i}}}
+   let bi=-1,bc=Infinity;for(let i=0;i<K;i++){const v=dp[F-1][i]+(e>=0?d(i+1,e):0);if(v<bc){bc=v;bi=i}}
+   if(bi<0)return null;
+   for(let s=F-1,i=bi;i>=0;){order.push(i+1);const p=pr[s][i];s^=1<<i;i=p}
+   order.reverse()}
+  else{let cur=0;const left=new Set(T.map((_,i)=>i+1));
+   while(left.size){let b=-1,bc=Infinity;for(const j of left){const v=d(cur,j);if(v<bc){bc=v;b=j}}if(b<0)return null;order.push(b);left.delete(b);cur=b}}}
+ const acts=[];let cur=0;
+ const leg=(a,b)=>{const{dist,prv}=B[a];let p=nodes[b];if(dist[p]===Infinity)return false;const seg=[];
+  while(p!==nodes[a]){const[q,dd]=prv[p];seg.push(dd);p=q}seg.reverse().forEach(x=>acts.push(x));return true};
+ for(const j of order){if(!leg(cur,j))return null;acts.push('F');cur=j}
+ if(e>=0&&!leg(cur,e))return null;
+ return acts}
+/* Эталонные алгоритмы (с условиями) для заданий if и cif. r — «виртуальный робот»: up/down/left/right/fill и датчики wu/wd/wl/wr (стена сверху/снизу/слева/справа) */
+const OPP={up:'down',down:'up',left:'right',right:'left'};
+const ALG={
+ if:{
+  1:r=>{if(r.wr())r.fill()},
+  2:r=>{r.left();r.left();if(r.wl())r.fill()},
+  3:r=>{if(r.wl()&&r.wr()){r.up();r.fill();r.down()}},
+  4:r=>{if(r.wl())r.right();else r.left()},
+  5:r=>{if(r.wl())r.right();else r.left();r.down()},
+  6:r=>{if(r.wu())r.down();else if(r.wd())r.up();else if(r.wl())r.right();else r.left();r.fill()},
+  7:r=>{if(!r.wu())r.up();else if(!r.wd())r.down();else if(!r.wl())r.left();else r.right();r.fill()},
+  8:r=>{const v=r.wu(),h=r.wl();if(v)r.down();else r.up();if(h)r.right();else r.left()},
+  9:r=>{r.fill();for(const d of['up','down','left','right']){r[d]();if(r['w'+d[0]]())r.fill();r[OPP[d]]()}},
+  10:r=>{for(const v of['up','down'])for(const h of['left','right']){r[v]();r[h]();if(r['w'+v[0]]()&&r['w'+h[0]]())r.fill();r[OPP[h]]();r[OPP[v]]()}}
+ },
+ cif:{
+  1:r=>{while(!r.wr()){r.right();if(r.wu())r.fill()}},
+  2:r=>{while(!r.wr()){r.right();if(r.wu()||r.wd())r.fill()}},
+  3:r=>{while(!r.wr()){r.right();if(r.wu()&&r.wd())r.fill()}},
+  4:r=>{while(!r.wd()){r.down();if(!r.wl()){r.left();r.fill();r.right()}}},
+  5:r=>{while(!r.wd()){r.down();if(!r.wl()){r.left();r.fill();r.right()}if(!r.wr()){r.right();r.fill();r.left()}}},
+  6:r=>{while(!r.wd()){r.down();if(r.wl()){r.right();r.fill();r.left()}else{r.left();r.fill();r.right()}}},
+  7:r=>{while(!r.wd()){r.down();if(r.wl()&&r.wr())r.fill();else if(r.wl()){r.right();r.fill();r.left()}else{r.left();r.fill();r.right()}}},
+  8:r=>{if(r.wu()){while(!r.wr())r.right();while(!r.wd())r.down()}else{while(!r.wl())r.left();while(!r.wu())r.up()}},
+  9:r=>{while(!r.wu())r.up();if(r.wl()){while(!r.wr())r.right()}else{while(!r.wl())r.left()}},
+  10:r=>{while(r.wl())r.down();r.right();
+   if(r.wr()){while(r.wr())r.down();r.up()}else{r.left();r.up()}}
+ }};
+/* Запуск эталонного алгоритма на копии поля; результат проверяется, иначе берётся обычный поиск маршрута */
+function refAlgo(){
+ const f=S.task&&ALG[S.task.type]&&ALG[S.task.type][S.task.num];if(!f)return null;
+ const st={x:S.x,y:S.y},fl=[],acts=[],n=S.n,W=S.wall;let guard=0;
+ const q=()=>st.y*n+st.x+1,
+  wall=d=>{const p=q();return d=='left'?W.left.includes(p)||W.right.includes(p-1):d=='right'?W.right.includes(p)||W.left.includes(p+1):
+   d=='down'?W.down.includes(p)||W.up.includes(p+n):W.up.includes(p)||W.down.includes(p-n)},
+  R={fill(){fl.push(q());acts.push('F')},wu:()=>wall('up'),wd:()=>wall('down'),wl:()=>wall('left'),wr:()=>wall('right')};
+ for(const a of DIRS)R[a.n]=()=>{if(++guard>3000||wall(a.n))throw 0;st.x+=a.dx;st.y+=a.dy;acts.push(a)};
+ try{f(R)}catch(e){return null}
+ const ok=(S.end==null||q()==S.end)&&new Set(fl).size==fl.length&&fl.length==S.tofill.length&&S.tofill.every(c=>fl.includes(c));
+ return ok?acts:null}
+function dmove(a,tok){return new Promise(res=>{D.dir=a.a;const T=Math.max(1,S.speed*1000),t0=performance.now();
+ (function f(t){if(D.tok!==tok)return res();const k=Math.min(1,(t-t0)/T);D.ox=a.dx*k;D.oy=a.dy*k;drawT();
+  if(k<1)requestAnimationFrame(f);else{D.x+=a.dx;D.y+=a.dy;D.ox=D.oy=0;drawT();res()}})(t0)})}
+async function demoRun(acts,tok){
+ await sleep(200);
+ for(const a of acts){if(D.tok!==tok)return;
+  if(a==='F'){const p=D.y*S.n+D.x+1;if(!D.fill.includes(p))D.fill.push(p);drawT();await sleep(Math.max(40,S.speed*500))}
+  else await dmove(a,tok)}}
+function startDemo(){demoStop();const acts=refAlgo()||solve();if(!acts)return;
+ resShow(true);D.x=S.x;D.y=S.y;D.ox=D.oy=0;D.dir=0;D.fill=[];D.on=true;const tok=++D.tok;tsig='';drawT();demoRun(acts,tok)}
 /* ---------- Python (Skulpt) ---------- */
 const py=v=>v===undefined?Sk.builtin.none.none$:Sk.ffi.remapToPy(v);
 const susp=p=>{const s=new Sk.misceval.Suspension();s.resume=()=>{if(s.data.error)throw s.data.error;return s.data.result};s.data={type:'Sk.promise',promise:p};return s};
@@ -1244,14 +1328,14 @@ async function run(){
  S.stop=false;$('out').textContent='';msg('');S.x=S.sx;S.y=S.sy;S.dir=0;S.fill=[];
  if(pr.err){$('out').innerHTML+=`<span style="color:#c00">${esc('Ошибка в строке '+pr.err.ln+': '+pr.err.msg)}</span>`;stat('Ошибка выполнения','red');hl(pr.err.ln);return}
  try{if(S.task){reloadTask();stat('Задание '+S.task.type+S.task.num,'blue')}else stat('Задание не выбрано')}catch(e){toast('Ошибка: '+e)}
- draw();if(S.end!=null)showTarget();S.run=true;S.busy=true;
+ draw();if(S.end!=null)showTarget();try{startDemo()}catch(e){console.error(e)}S.run=true;S.busy=true;
  try{await Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody('<stdin>',false,code,true),{'*':()=>{if(S.stop)throw 'STOP'}});
   if(S.stop)stat('Выполнение остановлено','red');else if(S.end!=null)check()}
  catch(e){if(e==='STOP'||S.stop)stat('Выполнение остановлено','red');else{
   const ln=e.traceback&&e.traceback[0]&&e.traceback[0].lineno,m=String(e).replace(/ on line \d+$/,'').replace(/^Exception: /,'');
   $('out').innerHTML+=`<span style="color:#c00">${esc((ln?'Ошибка в строке '+ln+': ':'')+m)}</span>`;stat('Ошибка выполнения','red');if(ln)hl(ln)}}
  finally{S.run=false;S.busy=false;S.moving=false;draw()}}
-const stop=()=>{S.stop=true;S.run=false};
+const stop=()=>{S.stop=true;S.run=false;demoStop()};
 function reset(){stop();S.m=S.n=5;S.x=S.y=S.sx=S.sy=0;S.dir=0;S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.task=null;resShow(false);msg('');stat('Поле сброшено');sel('None');draw()}
 /* ---------- окна внутри страницы ---------- */
 let Z=100;
@@ -1312,6 +1396,7 @@ const HELP_HTML=`<div class="hp">
 <ul>
 <li>У каждой вкладки своё задание и своё поле робота.</li>
 <li>Задания лежат в файле <code>tasks.js</code> рядом с <code>robot.html</code>.</li>
+<li>При запуске (<kbd>F5</kbd>) в панели «Результат выполнения задания» показывается, как робот должен пройти задание: куда идти и какие клетки закрашивать.</li>
 </ul>
 
 <h3>Автоподсказки</h3>
@@ -1410,7 +1495,7 @@ new ResizeObserver(hlRender).observe($('ta'));
 const SK=['m','n','x','y','sx','sy','dir','fill','tofill','end','wall','task','env'];
 const snap=()=>({s:JSON.parse(JSON.stringify(SK.reduce((o,k)=>(o[k]=S[k],o),{}))),st:$('stat').textContent,sc:$('stat').style.color,mg:$('msg').textContent,sl:$('sel').textContent,o:$('out').innerHTML,r:!$('tp').classList.contains('hid')});
 const canLeave=()=>!S.busy||(toast('Сначала остановите выполнение программы'),false);
-function loadV(v){const w=$('we');if(w)w.remove();S.stop=S.run=S.moving=false;S.ox=S.oy=0;
+function loadV(v){demoStop();const w=$('we');if(w)w.remove();S.stop=S.run=S.moving=false;S.ox=S.oy=0;
  if(v){Object.assign(S,JSON.parse(JSON.stringify(v.s)));$('stat').textContent=v.st;$('stat').style.color=v.sc;$('msg').textContent=v.mg;$('sel').textContent=v.sl;$('out').innerHTML=v.o;resShow(!!v.r)}
  else{Object.assign(S,{m:5,n:5,x:0,y:0,sx:0,sy:0,dir:0,fill:[],tofill:[],end:null,task:null,env:null});S.wall=bw();$('out').textContent='';msg('');stat('Задание не выбрано');sel('None');resShow(false)}
  tsig='';draw()}
