@@ -4,7 +4,7 @@
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{font:14px system-ui,"Segoe UI",Arial,sans-serif;background:#eef1f5;color:#222;display:flex;flex-direction:column;user-select:none}
 #mb{display:flex;background:#fff;border-bottom:1px solid #ccd}
-.m{position:relative;padding:5px 12px;cursor:default}.m:hover,.m.open{background:#e3edfb}
+.m{position:relative;padding:5px 12px;cursor:pointer}.m:hover,.m.open{background:#e3edfb}
 .dd{display:none;position:absolute;left:0;top:100%;background:#fff;border:1px solid #bbc;min-width:180px;z-index:500;box-shadow:0 4px 10px #0002}
 .open>.dd{display:block}.it{padding:5px 14px;white-space:nowrap;position:relative;cursor:pointer}.it:hover,.it.open{background:#e3edfb}.sm>.dd{left:100%;top:0}.sm{padding-right:30px}.sm::after{content:'\25B8';position:absolute;right:11px;color:#778}
 #tb{display:flex;align-items:center;gap:4px;padding:4px 8px;background:#f8f9fb;border-bottom:1px solid #ccd}
@@ -1533,30 +1533,22 @@ $('ta').onkeydown=e=>{if(acKey(e))return;if(e.key=='Tab'){e.preventDefault();doc
  else if(e.key=='Backspace'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const ta=$('ta'),p=ta.selectionStart;if(p==ta.selectionEnd&&ta.value[p-1]===MK){const m=/(?:up|down|left|right|fill)\u200b$/.exec(ta.value.slice(0,p));if(m){e.preventDefault();ta.setSelectionRange(p-m[0].length,p);document.execCommand('delete')}}}};
 addEventListener('keydown',e=>{if(e.key=='F5'){e.preventDefault();run()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='s'){e.preventDefault();saveF()}});
 /* ---------- меню и панель инструментов ---------- */
-/* Меню: открытие по наведению, но без «дёрганья» — переключение подпунктов с задержкой,
-   движение мыши по диагонали к открытому подменю не переключает категорию, закрытие с небольшой паузой. */
-const CLOSE=500,closeAll=()=>document.querySelectorAll('.m.open,.it.open').forEach(x=>x.classList.remove('open'));
+/* Меню: открывается по щелчку. Щелчок по пункту раскрывает его, повторный щелчок, щелчок вне меню или Esc — закрывают. */
+const closeAll=()=>document.querySelectorAll('.m.open,.it.open').forEach(x=>x.classList.remove('open'));
 const place=dd=>{dd.style.top=dd.style.left=dd.style.right='';let r=dd.getBoundingClientRect();
  if(dd.parentNode.classList.contains('sm')){if(r.right>innerWidth-4){dd.style.left='auto';dd.style.right='100%'}
   r=dd.getBoundingClientRect();const dy=Math.min(r.bottom-(innerHeight-4),r.top-4);if(dy>0)dd.style.top=-dy+'px'}
  else if(r.right>innerWidth-4){dd.style.left='auto';dd.style.right='0'}};
-const inTri=(p,a,b,c)=>{const s=(u,v,w)=>(u.x-w.x)*(v.y-w.y)-(v.x-w.x)*(u.y-w.y),d1=s(p,a,b),d2=s(p,b,c),d3=s(p,c,a);return !((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))};
-const menu=items=>{const d=document.createElement('div');d.className='dd';let tm=0,trail=[];
- const cur=()=>[...d.children].find(x=>x.classList.contains('open'));
- const show=e=>{const c=cur();if(c===e)return;if(c)c.classList.remove('open');if(e){e.classList.add('open');place(e.lastChild)}};
- const toward=(ev,c)=>{const p=trail[0];if(!p)return false;const r=c.lastChild.getBoundingClientRect(),right=r.left>c.getBoundingClientRect().left,x=right?r.left:r.right,
-   dx=(ev.clientX-p.x)*(right?1:-1),dy=Math.abs(ev.clientY-p.y);
-  return dx>0&&dx>0.15*dy&&inTri({x:ev.clientX,y:ev.clientY},p,{x,y:r.top},{x,y:r.bottom})};
- d.addEventListener('mousemove',ev=>{trail.push({x:ev.clientX,y:ev.clientY});if(trail.length>4)trail.shift();const c=cur();if(c&&c.lastChild.contains&&c.lastChild.contains(ev.target))clearTimeout(tm)});
- d.addEventListener('mouseleave',()=>{clearTimeout(tm);trail=[]});
+const menu=items=>{const d=document.createElement('div');d.className='dd';
  items.forEach(([l,f])=>{const sub=Array.isArray(f),e=document.createElement('div');e.className='it'+(sub?' sm':'');e.append(l);
-  if(sub){e.append(menu(f));e.onclick=ev=>{ev.stopPropagation();show(e)}}
-  else e.onclick=ev=>{ev.stopPropagation();closeAll();const m=e.closest('.m');if(m)m.classList.add('shut');f()};
-  e.addEventListener('mouseenter',ev=>{clearTimeout(tm);const c=cur();if(c===e)return;if(!c){if(sub)show(e);return}
-   tm=setTimeout(()=>show(sub?e:null),toward(ev,c)?450:150)});
+  if(sub){e.append(menu(f));e.onclick=ev=>{ev.stopPropagation();const was=e.classList.contains('open');
+    [...d.children].forEach(x=>{x.classList.remove('open');x.querySelectorAll('.it.open').forEach(y=>y.classList.remove('open'))});
+    if(!was){e.classList.add('open');place(e.lastChild)}}}
+  else e.onclick=ev=>{ev.stopPropagation();closeAll();f()};
   d.append(e)});return d};
 document.addEventListener('mousedown',ev=>{if(!ev.target.closest('.m'))closeAll()});
 addEventListener('keydown',ev=>{if(ev.key=='Escape')closeAll()});
+addEventListener('blur',closeAll);
 const tk=t=>[t,TC[t]?[...Array(TC[t])].map((_,i)=>['Задание '+(i+1),()=>loadTask(t,i+1)]):[['нет заданий (проверьте tasks.js)',()=>{}]]];
 [['Файл',[['Открыть',()=>$('fo').click()],['Сохранить',saveF]]],
  ['Окружение',[['Сохранить',()=>{saveEnv();dl('environment.env',JSON.stringify(S.env))}],['Загрузить',()=>$('fe').click()],['Изменить',openEditor]]],
@@ -1564,9 +1556,7 @@ const tk=t=>[t,TC[t]?[...Array(TC[t])].map((_,i)=>['Задание '+(i+1),()=>l
  ['Шрифт',[['Выбрать размер шрифта',()=>{const v=parseInt(prompt('Введите размер шрифта:',15));if(v>0){$('ta').style.fontSize=v+'px';hlRender()}}]]],
  ['Помощь',[['СПРАВКА',showHelp]]]
 ].forEach(([l,it])=>{const m=document.createElement('div'),dd=menu(it);let ct=0;m.className='m';m.append(l,dd);
- m.onmouseenter=()=>{clearTimeout(ct);if(m.classList.contains('shut'))return;document.querySelectorAll('.m.open').forEach(x=>{if(x!==m)x.classList.remove('open')});m.classList.add('open');place(dd)};
- m.onmouseleave=()=>{m.classList.remove('shut');clearTimeout(ct);ct=setTimeout(()=>{m.classList.remove('open');m.querySelectorAll('.it.open').forEach(x=>x.classList.remove('open'))},CLOSE)};
- m.onclick=ev=>{if(ev.target===m){m.classList.add('open');place(dd)}};
+ m.onclick=ev=>{if(ev.target.closest('.dd'))return;const was=m.classList.contains('open');closeAll();if(!was){m.classList.add('open');place(dd)}};
  $('mb').append(m)});
 const ed=c=>()=>{$('ta').focus();document.execCommand(c)};
 [['new_tab','Создать новую вкладку',()=>newTab()],['close_tab','Закрыть текущую вкладку',closeTab],['save','Сохранить файл',saveF],['open','Открыть файл',()=>$('fo').click()],['start','Запустить код (F5)',run],['end','Остановить выполнение',stop],
