@@ -1215,7 +1215,7 @@ async function run(){
  catch(e){if(e==='STOP'||S.stop)stat('Выполнение остановлено','red');else{const r=errTxt(e);$('out').innerHTML+=`<span style="color:#c00">${esc((r.ln?'Ошибка в строке '+r.ln+': ':'')+r.m)}</span>`;stat('Ошибка выполнения','red');if(r.ln)hl(r.ln)}}
  finally{S.busy=false;$('inr').classList.remove('on');CI=null}}
 const stop=()=>{S.stop=true;if(CI)CI.rej()};
-function reset(){stop();$('out').textContent='';msg('');clearRes();if(T[cur]){T[cur].task=null;T[cur].done=false}syncTask();stat('Задание и консоль сброшены')}
+function reset(){stop();$('out').textContent='';msg('');clearRes();if(T[cur]){T[cur].task=null;T[cur].done=false;T[cur].t='';T[cur].v=null}$('ta').value='';hlRender();persist();syncTask();stat('Задание, код и консоль сброшены')}
 const ed=c=>()=>{$('ta').focus();document.execCommand(c)};
 $('inp').onkeydown=e=>{if(e.key=='Enter'&&CI)CI.res($('inp').value)};$('inb').onclick=()=>CI&&CI.res($('inp').value);
 /* запуск программы без экрана: для проверки заданий (ввод берётся из теста, вывод собирается в строку) */
@@ -1476,7 +1476,7 @@ addEventListener('keydown',e=>{if(e.ctrlKey&&e.key=='Enter'){e.preventDefault();
  m.onclick=ev=>{if(ev.target.closest('.dd'))return;const was=m.classList.contains('open');closeAll();if(!was){m.classList.add('open');place(dd)}};
  $('mb').append(m)});
 [['new_tab','Создать новую вкладку',()=>newTab()],['close_tab','Закрыть текущую вкладку',closeTab],['save','Сохранить файл',saveF],['open','Открыть файл',()=>$('fo').click()],['start','Запустить код (F5)',run],['end','Остановить выполнение',stop],
- ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Сбросить задание и поле',reset]
+ ['return','Отменить последнее действие',ed('undo')],['restore','Повторить последнее действие',ed('redo')],['reset','Сбросить текущее задание',reset]
 ].forEach(([ic,t,f])=>{const b=document.createElement('button');b.title=t;b.innerHTML=`<img src="${I[ic]}" alt="">`;b.onmousedown=e=>e.preventDefault();b.onclick=f;$('tb').append(b)});
 $('tb').insertAdjacentHTML('beforeend','<span id="sel">Выбранное задание: None</span>');
 tabs();stat('Готово к работе');
