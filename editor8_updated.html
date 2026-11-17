@@ -78,8 +78,10 @@ canvas{display:block}
 .rt td{padding:3px 8px;border-top:1px solid #e3e7ef;white-space:pre-wrap;vertical-align:top}
 .rt tr.ok td:last-child{color:#15803d;font-weight:700}.rt tr.bad td{background:#fff3f3}.rt tr.bad td:last-child{color:#b91c1c;font-weight:700}
 #tk-i code{white-space:pre-wrap}
+
+#prog{order:99;margin-left:auto;padding:5px 16px;font-weight:600;white-space:nowrap;color:#1d4ed8;cursor:default}#prog.all{color:#15803d}#prog.none{color:#889;font-weight:400}
 </style></head><body>
-<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a></div><div id="tb"></div>
+<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a><span id="prog" title="Выполнено заданий / открыто вкладок с заданиями">Выполнено: 0/0</span></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="task" class="hid"><div class="th"><b id="tk-t"></b><button id="tk-x" title="Закрыть задание">✕</button></div><div id="tk-b"></div><div id="tk-i"></div><details id="tk-m"><summary>💡 Подсказка</summary><div id="tk-hint"></div></details><div id="tk-bar"><button id="tk-chk" title="Ctrl+Enter">✔ Проверить решение</button></div></div><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div></div>
 <div id="R"><div class="rh">Консоль</div><div id="cons"><pre id="out"></pre><div id="inr"><span id="ip"></span><input id="inp" autocomplete="off" placeholder="введите значение и нажмите Enter"><button id="inb">Ввод</button></div></div><div id="tp" class="hid"></div><div id="msg"></div><div id="bar"><span id="stat">Статус: Готово к работе</span></div></div></div>
 <input type="file" id="fo" hidden><div id="toast"></div><div id="ac"></div>
@@ -1213,7 +1215,7 @@ async function run(){
  catch(e){if(e==='STOP'||S.stop)stat('Выполнение остановлено','red');else{const r=errTxt(e);$('out').innerHTML+=`<span style="color:#c00">${esc((r.ln?'Ошибка в строке '+r.ln+': ':'')+r.m)}</span>`;stat('Ошибка выполнения','red');if(r.ln)hl(r.ln)}}
  finally{S.busy=false;$('inr').classList.remove('on');CI=null}}
 const stop=()=>{S.stop=true;if(CI)CI.rej()};
-function reset(){stop();$('out').textContent='';msg('');clearRes();if(T[cur]){T[cur].task=null}syncTask();stat('Задание и консоль сброшены')}
+function reset(){stop();$('out').textContent='';msg('');clearRes();if(T[cur]){T[cur].task=null;T[cur].done=false}syncTask();stat('Задание и консоль сброшены')}
 const ed=c=>()=>{$('ta').focus();document.execCommand(c)};
 $('inp').onkeydown=e=>{if(e.key=='Enter'&&CI)CI.res($('inp').value)};$('inb').onclick=()=>CI&&CI.res($('inp').value);
 /* запуск программы без экрана: для проверки заданий (ввод берётся из теста, вывод собирается в строку) */
@@ -1296,6 +1298,7 @@ function loadV(v){S.stop=false;clearRes();
 function goTab(i){if(i==cur||!canLeave())return;T[cur].t=$('ta').value;T[cur].v=snap();cur=i;loadV(T[cur].v);tabs();persist()}
 /* ---------- вкладки с кодом и файлы ---------- */
 let T=[{n:'Program 1',t:'',task:null,rs:false,v:null}],cur=0,cnt=1;
+function updProg(){const e=$('prog');if(!e)return;let tot=0,ok=0;T.forEach(t=>{if(t.task){tot++;if(t.done)ok++}});e.textContent='Выполнено: '+ok+'/'+tot;e.className=!tot?'none':ok==tot?'all':''}
 /* при запуске редактор всегда пустой: прошлый текст не восстанавливаем */try{localStorage.removeItem('robotTabs')}catch(_){}
 const persist=()=>{};
 function tabs(){const b=$('tabs');b.innerHTML='';T.forEach((t,i)=>{const d=document.createElement('div');d.className='tab'+(i==cur?' on':'');d.textContent=t.n;d.onclick=()=>goTab(i);d.oncontextmenu=e=>{e.preventDefault();tabMenu(e,i)};b.append(d)});$('ta').value=T[cur].t;hlRender();syncTask()}
@@ -1460,9 +1463,9 @@ const exFor=tk=>tk._e||(tk._e=(RQ=RQ.then(async()=>{while(S.busy)await new Promi
 function showTask(id){const tk=TASKS[id];if(!tk)return hideTask();TK=tk;$('tk-t').textContent='Задание '+tk.num+' — '+tk.n;$('tk-b').innerHTML=tk.x;$('tk-hint').innerHTML=tk.h;$('tk-m').open=false;$('tk-i').innerHTML='';
  $('task').classList.remove('hid');selTxt(tk);exFor(tk).then(h=>{if(TK===tk)$('tk-i').innerHTML=h})}
 function hideTask(){TK=null;$('task').classList.add('hid');selTxt(null)}
-function syncTask(){const id=T[cur]&&T[cur].task;if(id)showTask(id);else hideTask()}
-function selectTask(id){if(!canLeave())return;T[cur].task=id;$('out').textContent='';msg('');clearRes();syncTask();stat('Задание '+TASKS[id].c.k+' '+TASKS[id].num)}
-$('tk-x').onclick=()=>{if(!canLeave())return;T[cur].task=null;msg('');clearRes();syncTask();stat('Задание не выбрано')};
+function syncTask(){const id=T[cur]&&T[cur].task;if(id)showTask(id);else hideTask();updProg()}
+function selectTask(id){if(!canLeave())return;if(T[cur].task!==id)T[cur].done=false;T[cur].task=id;$('out').textContent='';msg('');clearRes();syncTask();stat('Задание '+TASKS[id].c.k+' '+TASKS[id].num)}
+$('tk-x').onclick=()=>{if(!canLeave())return;T[cur].task=null;T[cur].done=false;msg('');clearRes();syncTask();stat('Задание не выбрано')};
 async function check(){
  const tk=TK;if(!tk)return toast('Сначала выберите задание в меню «Задания»');if(S.busy)return;T[cur].t=$('ta').value;
  S.busy=true;stat('Проверка…','blue');$('out').textContent='';msg('');let ok=0,rows='';
@@ -1470,7 +1473,7 @@ async function check(){
    rows+=`<tr class="${g?'ok':'bad'}"><td>${i+1}</td><td>${esc(inp.join('\n'))}</td><td>${esc(e.o.trim())}</td><td>${esc(s.er?'Ошибка: '+s.er:s.o.trim())}</td><td>${g?'✔':'✘'}</td></tr>`}}
  finally{S.busy=false}
  $('tp').innerHTML='<div class="rh">Результат проверки: '+ok+' из '+tk.t.length+'</div><table class="rt"><tr><th>№</th><th>Ввод</th><th>Ожидается</th><th>У вас</th><th></th></tr>'+rows+'</table>';$('tp').classList.remove('hid');
- if(ok==tk.t.length){stat('Задание выполнено!','green');msg('')}else{stat('Задание не выполнено','red');msg('Пройдено тестов: '+ok+' из '+tk.t.length+'. Сравните «Ожидается» и «У вас» в таблице.')}}
+ if(ok==tk.t.length){T[cur].done=true;updProg();stat('Задание выполнено!','green');msg('')}else{stat('Задание не выполнено','red');msg('Пройдено тестов: '+ok+' из '+tk.t.length+'. Сравните «Ожидается» и «У вас» в таблице.')}}
 $('tk-chk').onclick=check;
 addEventListener('keydown',e=>{if(e.ctrlKey&&e.key=='Enter'){e.preventDefault();check()}});
 /* ---------- меню и панель инструментов ---------- */

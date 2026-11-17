@@ -62,8 +62,10 @@ canvas{display:block}
 #tk-chk{font-weight:600;border-color:#4a9a5a!important}
 #tk-h{display:none;margin-top:6px;padding:5px 8px;background:#eef6ff;border-radius:5px;line-height:1.45}
 #tk-res{margin-top:6px;line-height:1.45}#tk-res .ok{color:#15803d;font-weight:600}#tk-res .bad{color:#b91c1c;font-weight:600}
+
+#prog{order:99;margin-left:auto;padding:5px 16px;font-weight:600;white-space:nowrap;color:#1d4ed8;cursor:default}#prog.all{color:#15803d}#prog.none{color:#889;font-weight:400}
 </style></head><body>
-<div id="mb"></div><div id="tb"></div>
+<div id="mb"><span id="prog" title="Выполнено заданий / открыто вкладок с заданиями">Выполнено: 0/0</span></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="task" class="hid"><div class="th"><b id="tk-t"></b><button id="tk-x" title="Закрыть задание">✕</button></div><div id="tk-b"></div></div><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div><div>Консоль:</div><pre id="out"></pre></div>
 <div id="R"><div id="rr"><div id="cw1"><div class="th">Поле черепахи<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><div id="cvw"><canvas id="cv"></canvas></div></div><div id="tp" class="hid"><div class="th">Результат выполнения задания<small>Колесо — масштаб, перетаскивание — сдвиг, двойной щелчок — сброс.</small></div><canvas id="ct"></canvas></div></div><div id="info"></div><div id="msg"></div><div id="bar">Скорость: <input type="range" id="sp" min="0" max="100" value="30"><span id="stat">Статус: Готово к работе</span></div></div></div>
 <input type="file" id="fo" hidden><div id="toast"></div><div id="ac"></div>
@@ -1446,6 +1448,7 @@ function goTab(i){if(i==cur||!canLeave())return;T[cur].t=$('ta').value;T[cur].v=
 
 /* ---------- вкладки с кодом и файлы ---------- */
 let T=[{n:'Program 1',t:'',task:null,rs:false,v:null}],cur=0,cnt=1;
+function updProg(){const e=$('prog');if(!e)return;let tot=0,ok=0;T.forEach(t=>{if(t.task){tot++;if(t.done)ok++}});e.textContent='Выполнено: '+ok+'/'+tot;e.className=!tot?'none':ok==tot?'all':''}
 /* при запуске редактор всегда пустой: прошлый текст не восстанавливаем */try{localStorage.removeItem('robotTabs')}catch(_){}
 const persist=()=>{};
 function tabs(){const b=$('tabs');b.innerHTML='';T.forEach((t,i)=>{const d=document.createElement('div');d.className='tab'+(i==cur?' on':'');d.textContent=t.n;d.onclick=()=>goTab(i);d.oncontextmenu=e=>{e.preventDefault();tabMenu(e,i)};b.append(d)});$('ta').value=T[cur].t;hlRender();syncTask()}
@@ -1818,11 +1821,11 @@ function showTask(id){const tk=TASKS[id];if(!tk)return hideTask();
  $('task').classList.remove('hid');selTxt(tk);ensureRef(tk).then(drawT)}
 function hideTask(){TK=null;$('task').classList.add('hid');selTxt(null)}
 function resShow(v){const p=$('tp');if(T[cur])T[cur].rs=!!v;if(p.classList.contains('hid')==!v)return;p.classList.toggle('hid',!v);need();setTimeout(drawT,0)}
-function syncTask(){const t=T[cur],id=t&&t.task;if(id)showTask(id);else hideTask();resShow(!!(t&&t.rs&&TK))}
+function syncTask(){const t=T[cur],id=t&&t.task;if(id)showTask(id);else hideTask();resShow(!!(t&&t.rs&&TK));updProg()}
 function selectTask(id){if(!canLeave())return;const t=TASKS[id];
- T[cur].task=id;T[cur].rs=true;newWorld();$('out').textContent='';msg('');
+ if(T[cur].task!==id)T[cur].done=false;T[cur].task=id;T[cur].rs=true;newWorld();$('out').textContent='';msg('');
  syncTask();stat('Задание '+t.c.k+' '+t.num)}
-$('tk-x').onclick=()=>{if(!canLeave())return;T[cur].task=null;T[cur].rs=false;msg('');syncTask();stat('Задание не выбрано')};
+$('tk-x').onclick=()=>{if(!canLeave())return;T[cur].task=null;T[cur].done=false;T[cur].rs=false;msg('');syncTask();stat('Задание не выбрано')};
 
 /* проверка: линии и точки сравниваются с образцом с допуском TOL; закраска — по цвету в центре фигуры */
 const CW=640,CO=320,TOL=5;
@@ -1876,7 +1879,7 @@ function colorCheck(refItems,stuItems){
 /* как в роботе: итог в строке статуса, причины списком под полем, образец — в окне справа */
 async function checkTask(){
  if(!TK||S.busy)return;
- const tk=TK;await ensureRef(tk);if(S.busy||TK!==tk)return;
+ const tk=TK,tb=T[cur];await ensureRef(tk);if(S.busy||TK!==tk||T[cur]!==tb)return;
  const fail=r=>{stat('Задание не выполнено','red');msg('Задание не выполнено:\n'+r.join('\n'));resShow(true)};
  if(!tk._ref)return fail(['- Не удалось построить образец: '+(tk._err||'')]);
  const stu=W.items.filter(it=>it.k=='p'||it.k=='d');
@@ -1884,7 +1887,7 @@ async function checkTask(){
  const ref=tk._ref.items.filter(it=>it.k=='p'||it.k=='d'),
   a=cover(samples(ref),maskOf(stu,TOL)),b=cover(samples(stu),maskOf(ref,TOL)),cc=colorCheck(tk._ref.items,W.items),
   miss=a.r<.97||a.worst<.8,extra=b.r<.97||b.worst<.8;
- if(!miss&&!extra&&!cc.length){stat('Задание выполнено!','green');msg('');return}
+ if(!miss&&!extra&&!cc.length){tb.done=true;updProg();stat('Задание выполнено!','green');msg('');return}
  const r=[];
  if(miss)r.push('- Не хватает части рисунка (совпало '+Math.round(a.r*100)+'% линий образца)');
  if(extra)r.push('- Есть лишние линии или линии нарисованы не там (лишнее: '+Math.round((1-b.r)*100)+'%)');

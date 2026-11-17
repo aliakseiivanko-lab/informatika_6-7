@@ -56,8 +56,10 @@ canvas{display:block}
 .hp tr:last-child td{border-bottom:0}
 .hp ul{margin:6px 0;padding-left:22px}.hp li{margin:3px 0}
 .hp .note{margin:8px 0;padding:8px 12px;background:#fff8e6;border-left:4px solid #f5a623;border-radius:3px}
+
+#prog{order:99;margin-left:auto;padding:5px 16px;font-weight:600;white-space:nowrap;color:#1d4ed8;cursor:default}#prog.all{color:#15803d}#prog.none{color:#889;font-weight:400}
 </style></head><body>
-<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a></div><div id="tb"></div>
+<div id="mb"><a class="home" href="index.html" title="Вернуться на главный экран">← На главный экран</a><span id="prog" title="Выполнено заданий / открыто вкладок с заданиями">Выполнено: 0/0</span></div><div id="tb"></div>
 <div id="main"><div id="L"><div id="tabs"></div><div id="ew"><pre id="hv" aria-hidden="true"></pre><textarea id="ta" spellcheck="false"></textarea></div><div>Консоль:</div><pre id="out"></pre></div>
 <div id="R"><div id="rr"><div id="cw1"><canvas id="cv"></canvas></div><div id="tp" class="hid"><div class="th">Результат выполнения задания</div><canvas id="ct"></canvas></div></div><div id="msg"></div><div id="bar">Скорость: <input type="range" id="sp" min="0" max="100" value="50"><span id="stat">Статус: Задание не выбрано</span></div></div></div>
 <input type="file" id="fo" hidden><input type="file" id="fe" hidden><div id="toast"></div><div id="ac"></div>
@@ -1151,7 +1153,7 @@ const RU={left:'влево',right:'вправо',up:'вверх',down:'вниз'
 const bw=()=>{const w={left:[],right:[],up:[],down:[]},{m,n}=S;for(let i=1;i<=m*n;i++){if((i-1)%n==0)w.left.push(i);if(i%n==0)w.right.push(i);if(i<=n)w.up.push(i);if(i>n*(m-1))w.down.push(i)}return w};
 S.wall=bw();
 const pos=()=>S.y*S.n+S.x+1,esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const stat=(t,c)=>{$('stat').textContent='Статус: '+t;$('stat').style.color=c||'#000'},msg=t=>$('msg').textContent=t||'',sel=t=>$('sel').textContent='Выбранное задание: '+t;
+const stat=(t,c)=>{$('stat').textContent='Статус: '+t;$('stat').style.color=c||'#000'},msg=t=>$('msg').textContent=t||'',sel=t=>{$('sel').textContent='Выбранное задание: '+t;updProg()};
 let tt;const toast=t=>{const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(tt);tt=setTimeout(()=>e.style.display='none',2500)};
 const dl=(n,t)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e3)};
 /* ---------- отрисовка поля (основное окно, предпросмотр результата, редактор) ---------- */
@@ -1199,17 +1201,17 @@ const A={move_up:()=>step(0,-1,0,'up'),move_down:()=>step(0,1,180,'down'),move_l
  mark_cell_to_fill:(...a)=>{if(okc(a)){const c=cellNo(a);if(!S.tofill.includes(c))S.tofill.push(c);draw()}},
  cell_is_filled:()=>S.fill.includes(pos()),
  task:s=>{s=String(s);const num=+s.replace(/\D/g,''),ty=s.replace(/[^a-zA-Z]/g,'');if(!/^(algo|for|while|if|cif)$/.test(ty)||num<1||num>(TC[ty]||0))return toast('Task '+s+' not found.');
-  if(!sameTask(ty,num))resShow(false);S.task={type:ty,num};clearTask();pyTask(ty+'_task_'+num,num);sel(ty+num);stat('Задание '+ty+num)}};
+  if(!sameTask(ty,num)){resShow(false);S.done=false}S.task={type:ty,num};clearTask();pyTask(ty+'_task_'+num,num);sel(ty+num);stat('Задание '+ty+num)}};
 ['left','right','up','down'].forEach(d=>{A['wall_'+d]=()=>wallf(d)});
 /* ---------- окружение и задания ---------- */
 function clearTask(){demoStop();S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.x=S.sx;S.y=S.sy;S.dir=0;draw()}
 function saveEnv(){S.env=JSON.parse(JSON.stringify({robot_start_pos:[S.x,S.y],filled_cells:S.fill,walls:S.wall,grid_size:[S.m,S.n],end_position:S.end,cells_to_fill:S.tofill}))}
 function loadEnv(){const e=S.env;if(!e)return;[S.m,S.n]=e.grid_size;S.x=S.sx=e.robot_start_pos[0];S.y=S.sy=e.robot_start_pos[1];S.fill=[...e.filled_cells];S.tofill=[...e.cells_to_fill];S.end=e.end_position;S.wall=JSON.parse(JSON.stringify(e.walls));S.dir=0}
 function pyTask(name,num){const m=Sk.importModule('robot_tasks',false,false);Sk.misceval.callsimArray(m.$d.run_task,[new Sk.builtin.str(name),new Sk.builtin.int_(num)]);draw()}
-function loadTask(t,n){if(!sameTask(t,n))resShow(false);S.task={type:t,num:n};msg('');clearTask();try{pyTask(t+'_task_'+n,n)}catch(e){toast('Ошибка загрузки задания: '+e)}const nm=t[0].toUpperCase()+t.slice(1)+' '+n;sel(nm);stat('Задание '+nm);draw()}
+function loadTask(t,n){if(!sameTask(t,n)){resShow(false);S.done=false}S.task={type:t,num:n};msg('');clearTask();try{pyTask(t+'_task_'+n,n)}catch(e){toast('Ошибка загрузки задания: '+e)}const nm=t[0].toUpperCase()+t.slice(1)+' '+n;sel(nm);stat('Задание '+nm);draw()}
 function reloadTask(){S.fill=[];S.tofill=[];S.end=null;S.wall=bw();if(S.task.type=='custom')loadEnv();else pyTask(S.task.type+'_task_'+S.task.num,S.task.num);draw()}
 function check(){const a=S.tofill.every(c=>S.fill.includes(c)),b=S.fill.every(c=>S.tofill.includes(c)),p=pos()==S.end;
- if(p&&a&&b){stat('Задание выполнено!','green');msg('')}else{const r=[];if(!p)r.push('- Робот не достиг конечной позиции');if(!a)r.push('- Не все клетки закрашены');if(!b)r.push('- Есть лишние закрашенные клетки');msg('Задание не выполнено:\n'+r.join('\n'));stat('Задание не выполнено','red');if(S.task)resShow(true)}}
+ if(p&&a&&b){S.done=true;updProg();stat('Задание выполнено!','green');msg('')}else{const r=[];if(!p)r.push('- Робот не достиг конечной позиции');if(!a)r.push('- Не все клетки закрашены');if(!b)r.push('- Есть лишние закрашенные клетки');msg('Задание не выполнено:\n'+r.join('\n'));stat('Задание не выполнено','red');if(S.task)resShow(true)}}
 /* ---------- «Результат выполнения задания»: при запуске показывает, как правильно пройти задание ---------- */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const DIRS=[{n:'up',dx:0,dy:-1,a:0},{n:'down',dx:0,dy:1,a:180},{n:'left',dx:-1,dy:0,a:-90},{n:'right',dx:1,dy:0,a:90}];
@@ -1340,7 +1342,7 @@ async function run(){
   $('out').innerHTML+=`<span style="color:#c00">${esc((ln?'Ошибка в строке '+ln+': ':'')+m)}</span>`;stat('Ошибка выполнения','red');if(ln)hl(ln)}}
  finally{S.run=false;S.busy=false;S.moving=false;draw()}}
 const stop=()=>{S.stop=true;S.run=false;demoStop()};
-function reset(){stop();S.m=S.n=5;S.x=S.y=S.sx=S.sy=0;S.dir=0;S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.task=null;resShow(false);msg('');stat('Поле сброшено');sel('None');draw()}
+function reset(){stop();S.m=S.n=5;S.x=S.y=S.sx=S.sy=0;S.dir=0;S.fill=[];S.tofill=[];S.end=null;S.wall=bw();S.task=null;S.done=false;resShow(false);msg('');stat('Поле сброшено');sel('None');draw()}
 /* ---------- окна внутри страницы ---------- */
 let Z=100;
 function win(id,title,html,w,h,x,y){let e=$(id);if(e){e.style.zIndex=++Z;return e}
@@ -1500,19 +1502,21 @@ function hlRender(){const ta=$('ta'),v=ta.value;let o='',i=0,m;HX.lastIndex=0;
 $('ta').addEventListener('scroll',()=>{hv.scrollTop=$('ta').scrollTop;hv.scrollLeft=$('ta').scrollLeft});
 new ResizeObserver(hlRender).observe($('ta'));
 /* ---------- состояние поля у каждой вкладки ---------- */
-const SK=['m','n','x','y','sx','sy','dir','fill','tofill','end','wall','task','env'];
+const SK=['m','n','x','y','sx','sy','dir','fill','tofill','end','wall','task','env','done'];
+function updProg(){try{const e=$('prog');if(!e)return;let tot=0,ok=0;T.forEach((t,i)=>{const s=i==cur?S:(t.v&&t.v.s);if(s&&s.task&&s.task.type!='custom'){tot++;if(s.done)ok++}});e.textContent='Выполнено: '+ok+'/'+tot;e.className=!tot?'none':ok==tot?'all':''}catch(_){}}
+
 const snap=()=>({s:JSON.parse(JSON.stringify(SK.reduce((o,k)=>(o[k]=S[k],o),{}))),st:$('stat').textContent,sc:$('stat').style.color,mg:$('msg').textContent,sl:$('sel').textContent,o:$('out').innerHTML,r:!$('tp').classList.contains('hid')});
 const canLeave=()=>!S.busy||(toast('Сначала остановите выполнение программы'),false);
 function loadV(v){demoStop();const w=$('we');if(w)w.remove();S.stop=S.run=S.moving=false;S.ox=S.oy=0;
  if(v){Object.assign(S,JSON.parse(JSON.stringify(v.s)));$('stat').textContent=v.st;$('stat').style.color=v.sc;$('msg').textContent=v.mg;$('sel').textContent=v.sl;$('out').innerHTML=v.o;resShow(!!v.r)}
- else{Object.assign(S,{m:5,n:5,x:0,y:0,sx:0,sy:0,dir:0,fill:[],tofill:[],end:null,task:null,env:null});S.wall=bw();$('out').textContent='';msg('');stat('Задание не выбрано');sel('None');resShow(false)}
+ else{Object.assign(S,{m:5,n:5,x:0,y:0,sx:0,sy:0,dir:0,fill:[],tofill:[],end:null,task:null,env:null,done:false});S.wall=bw();$('out').textContent='';msg('');stat('Задание не выбрано');sel('None');resShow(false)}
  tsig='';draw()}
 function goTab(i){if(i==cur||!canLeave())return;T[cur].t=$('ta').value;T[cur].v=snap();cur=i;loadV(T[cur].v);tabs();persist()}
 /* ---------- вкладки с кодом и файлы ---------- */
 let T=[{n:'Program 1',t:''}],cur=0,cnt=1;
 /* при запуске редактор всегда пустой: прошлый текст не восстанавливаем */try{localStorage.removeItem('robotTabs')}catch(_){}
 const persist=()=>{try{T[cur].v=snap();localStorage.setItem('robotTabs',JSON.stringify({t:T,c:cur,cnt}))}catch(_){}};addEventListener('beforeunload',persist);addEventListener('pagehide',persist);
-function tabs(){const b=$('tabs');b.innerHTML='';T.forEach((t,i)=>{const d=document.createElement('div');d.className='tab'+(i==cur?' on':'');d.textContent=t.n;d.onclick=()=>goTab(i);d.oncontextmenu=e=>{e.preventDefault();tabMenu(e,i)};b.append(d)});$('ta').value=T[cur].t;hlRender()}
+function tabs(){const b=$('tabs');b.innerHTML='';T.forEach((t,i)=>{const d=document.createElement('div');d.className='tab'+(i==cur?' on':'');d.textContent=t.n;d.onclick=()=>goTab(i);d.oncontextmenu=e=>{e.preventDefault();tabMenu(e,i)};b.append(d)});$('ta').value=T[cur].t;hlRender();updProg()}
 const newTab=(n,t)=>{if(!canLeave())return;T[cur].t=$('ta').value;T[cur].v=snap();T.push({n:n||'Program '+(++cnt),t:t||'',v:null});cur=T.length-1;loadV(null);tabs();persist()};
 const closeAt=i=>{if(T.length<2)return toast('Нельзя закрыть последнюю вкладку');if(i==cur&&!canLeave())return;T[cur].t=$('ta').value;T.splice(i,1);if(i<cur)cur--;else if(i==cur){cur=Math.min(cur,T.length-1);loadV(T[cur].v)}tabs();persist()};
 const closeTab=()=>closeAt(cur);
