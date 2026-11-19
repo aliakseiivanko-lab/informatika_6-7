@@ -186,6 +186,10 @@
       --accent: #fbbf24; --accent-rgb: 251, 191, 36;
       --accent2: #fb923c; --accent2-rgb: 251, 146, 60;
     }
+    .card.py10 {
+      --accent: #60a5fa; --accent-rgb: 96, 165, 250;
+      --accent2: #34d399; --accent2-rgb: 52, 211, 153;
+    }
 
     .card::before {
       content: ""; position: absolute; inset: -35%;
@@ -376,7 +380,8 @@
 
       <p class="subtitle">
         Стартовая страница для перехода в модули <strong>Черепаха 6 класс</strong>,
-        <strong>Python 8 класс</strong>, <strong>Робот 7 класс</strong> и <strong>Python 9 класс</strong>. Наведите курсор, выберите среду — и она запустится
+        <strong>Python 8 класс</strong>, <strong>Робот 7 класс</strong>, <strong>Python 9 класс</strong>
+        и <strong>Python 10 класс</strong>. Наведите курсор, выберите среду — и она запустится
         с плавной анимацией.
       </p>
     </section>
@@ -489,6 +494,29 @@
         </div>
         <span class="open-btn">Открыть модуль →</span>
       </a>
+
+      <a
+        class="card py10"
+        href="python_array.html"
+        data-name="Python — 10 класс"
+        aria-label="Открыть Python — 10 класс"
+      >
+        <div class="icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <path d="M22 20l-12 12 12 12" />
+            <path d="M42 20l12 12-12 12" />
+            <path d="M14 8h6M20 4v8" />
+            <path d="M14 56h36" />
+            <path d="M40 8h10M45 4v8" />
+          </svg>
+        </div>
+        <h2>Python — 10 класс</h2>
+        <div class="meta">
+          <span class="pill"><span class="status-dot" aria-hidden="true"></span>Готово к работе</span>
+          <span class="pill">Клавиша <kbd>5</kbd></span>
+        </div>
+        <span class="open-btn">Открыть модуль →</span>
+      </a>
     </section>
 
     <div class="hints" aria-hidden="true">
@@ -496,6 +524,7 @@
       <span><kbd>2</kbd> — Робот 7 класс</span>
       <span><kbd>3</kbd> — Python 8 класс</span>
       <span><kbd>4</kbd> — Python 9 класс</span>
+      <span><kbd>5</kbd> — Python 10 класс</span>
       <span><kbd>Tab</kbd> — навигация</span>
       <span><kbd>Enter</kbd> — открыть</span>
     </div>
@@ -647,6 +676,10 @@
       if (key === "2" || key === "Numpad2") {
         const robot = document.querySelector(".card.robot");
         if (robot) { event.preventDefault(); launch(robot.getAttribute("href"), robot.dataset.name); }
+      }
+      if (key === "5" || key === "Numpad5") {
+        const p10 = document.querySelector(".card.py10");
+        if (p10) { event.preventDefault(); launch(p10.getAttribute("href"), p10.dataset.name); }
       }
     });
 
