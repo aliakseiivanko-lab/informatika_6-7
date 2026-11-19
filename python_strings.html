@@ -57,7 +57,7 @@ canvas{display:block}
 #task .th button:disabled{opacity:.35;cursor:default}
 #tk-hint pre{margin:6px 0 0;padding:8px 10px;background:#fff;border:1px solid #e8e0b8;border-radius:5px;font:13px/1.45 Consolas,"Courier New",monospace;white-space:pre;overflow:auto;user-select:text}
 #task code{font:13px Consolas,monospace;background:#fff;border:1px solid #e8e0b8;border-radius:3px;padding:0 3px}
-#tk-b{line-height:1.5}#tk-m{margin-top:4px;font-size:12.5px;color:#554f2c}#tk-m summary{cursor:pointer}#tk-i{margin-top:3px;line-height:1.5}
+#tk-b{line-height:1.5}#tk-m{margin-top:4px;font-size:12.5px;color:#554f2c}#tk-m summary{cursor:pointer}#tk-i{margin-top:3px;line-height:1.5}#tk-i pre{margin:4px 0 6px;padding:6px 9px;background:#fff;border:1px solid #e8e0b8;border-radius:5px;font:13px/1.45 Consolas,"Courier New",monospace;white-space:pre;overflow:auto}
 #tk-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:6px}
 #tk-bar button{padding:4px 10px;border:1px solid #bbc;background:#fff;border-radius:5px;cursor:pointer}#tk-bar button:hover{background:#e3edfb}
 #tk-chk{font-weight:600;border-color:#4a9a5a!important}
@@ -333,7 +333,7 @@ function refreshProgress(){const a=T.filter(t=>t.task),n=a.filter(t=>t.solved).l
  c.title='Верно решённые задания / вкладки с выбранным заданием'}
 const selTxt=t=>$('sel')&&($('sel').textContent='Выбранное задание: '+(t?t.c.k+' '+t.num:'None'));
 const exFor=tk=>tk._e||(tk._e=(RQ=RQ.then(async()=>{while(S.busy)await new Promise(r=>setTimeout(r,60));S.busy=true;
- try{const r=await cap(tk.s,tk.t[0]);return '<b>Пример.</b> Ввод: <code>'+(tk.t[0].length?esc(tk.t[0].join('\n')):'нет')+'</code> Вывод: <code>'+esc(r.o.trim())+'</code>'}finally{S.busy=false}})));
+ try{const r=await cap(tk.s,tk.t[0]);const w=tk.t[0].length?'<pre>'+esc(tk.t[0].join('\n'))+'</pre>':' нет';return '<b>Пример.</b> Ввод: '+w+' Вывод: <pre>'+esc(r.o.trim())+'</pre>'}finally{S.busy=false}})));
 function showTask(id){const tk=TASKS[id];if(!tk)return hideTask();TK=tk;$('tk-t').textContent='Задание '+tk.num+' — '+tk.n;$('tk-b').innerHTML=tk.x;$('tk-hint').innerHTML=tk.h;$('tk-m').open=false;$('tk-i').innerHTML='';
  $('task').classList.remove('hid');selTxt(tk);exFor(tk).then(h=>{if(TK===tk)$('tk-i').innerHTML=h})}
 function hideTask(){TK=null;$('task').classList.add('hid');selTxt(null)}

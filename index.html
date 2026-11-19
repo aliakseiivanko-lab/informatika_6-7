@@ -1,739 +1,405 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
-  <title>Инициализация исполнителей</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Исполнители алгоритмов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff7e6; --card:#ffffff; --text:#23283a; --muted:#6b7089;
+  --accent:#ff7a1a; --accent2:#ffb020; --good:#1f9d55;
+  --line:#f0e3c8;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;
+  font-size:17px; line-height:1.55; overflow-x:hidden; min-height:100vh;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 15%, rgba(52,211,153,.14), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(96,165,250,.14), transparent 28%),
+    radial-gradient(circle at 88% 90%, rgba(255,122,26,.12), transparent 30%),
+    radial-gradient(circle at 6% 92%, rgba(244,114,182,.10), transparent 28%);
+}
+.g{
+  position:fixed; z-index:0; pointer-events:none; user-select:none;
+  font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:800;
+  color:rgba(35,40,58,.09); animation:float linear infinite;
+}
+@keyframes float{
+  from{transform:translateY(110vh) rotate(-8deg)}
+  to{transform:translateY(-15vh) rotate(10deg)}
+}
+.wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 20px}
 
-  <style>
-    :root {
-      --bg: #070b14;
-      --panel: rgba(10, 16, 28, 0.76);
-      --border: rgba(255, 255, 255, 0.09);
-      --text: #e6edf7;
-      --muted: #a8b4cc;
-      --cyan: #22d3ee;
-      --green: #34d399;
-      --violet: #a78bfa;
-      --pink: #f472b6;
-    }
+/* ---------- шапка ---------- */
+header{display:flex;align-items:center;gap:12px;padding:18px 0}
+.logo{
+  width:46px;height:46px;border-radius:16px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(145deg,#34d399,#22d3ee);
+  box-shadow:0 5px 0 rgba(35,40,58,.15);
+}
+.logo svg{width:28px;height:28px;stroke:#fff;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.logo .dot{fill:#fff;stroke:none}
+header b{font-family:"Fredoka",system-ui,sans-serif;font-size:22px;letter-spacing:.01em}
+header .tag{margin-left:auto;font-size:13px;font-weight:800;color:var(--muted);display:flex;align-items:center;gap:8px}
+header .tag i{width:9px;height:9px;border-radius:50%;background:var(--good);box-shadow:0 0 0 4px rgba(31,157,85,.15);animation:pulse 2s ease-in-out infinite;font-style:normal}
+@keyframes pulse{50%{transform:scale(1.4)}}
 
-    * { box-sizing: border-box; }
+/* ---------- герой ---------- */
+.hero{
+  display:flex;align-items:center;justify-content:center;gap:36px;
+  padding:30px 0 46px;text-align:center;flex-wrap:wrap;
+}
+.mascot{width:130px;flex:none;animation:bob 3s ease-in-out infinite}
+.mascot.robot-m{animation-delay:.6s}
+.mascot .eye{fill:#5ee0ff;animation:blink 4.6s infinite}
+@keyframes blink{0%,91%,100%{opacity:1}94%,97%{opacity:.12}}
+.mascot .ball{fill:#ffb020;transform-box:fill-box;transform-origin:center;animation:ballPulse 1.8s ease-in-out infinite}
+@keyframes ballPulse{50%{transform:scale(1.28);filter:drop-shadow(0 0 8px #ffb020)}}
+.mascot .armR{transform-box:fill-box;transform-origin:50% 10%;animation:wave 2.3s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+@keyframes bob{50%{transform:translateY(-9px)}}
+.mascot svg{width:100%;display:block;filter:drop-shadow(0 14px 20px rgba(35,40,58,.16))}
+.mascot.turtle-m svg{stroke:#12b886;stroke-width:2.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-    html, body { height: 100%; }
+.hero .mid{max-width:560px}
+.hero h1{
+  font-family:"Fredoka",system-ui,sans-serif;
+  font-size:clamp(2rem,5.4vw,3.4rem);line-height:1.08;letter-spacing:-.01em;
+}
+.hero h1 em{font-style:normal;color:var(--accent);text-shadow:0 3px 0 rgba(255,122,26,.15)}
+.hero p{color:var(--muted);margin-top:14px;font-size:1.05rem}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;justify-content:center}
+.badges span{
+  background:var(--card);border:2px solid var(--line);border-radius:999px;
+  padding:7px 14px;font-size:.88rem;font-weight:800;color:var(--muted);
+}
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      overflow-x: hidden;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.10), transparent 28%),
-        radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.10), transparent 25%),
-        radial-gradient(circle at 50% 100%, rgba(52, 211, 153, 0.08), transparent 30%),
-        linear-gradient(180deg, #060912 0%, #070b14 45%, #05070d 100%);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", Roboto, Arial, sans-serif;
-    }
+/* ---------- секции ---------- */
+section{padding:24px 0}
+h2{font-family:"Fredoka",system-ui,sans-serif;font-size:clamp(1.5rem,3.4vw,2.1rem);margin-bottom:6px}
+.sub{color:var(--muted);margin-bottom:22px}
 
-    #bg {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      opacity: 0.75;
-    }
+/* ---------- карточки ---------- */
+.courses{display:flex;flex-wrap:wrap;justify-content:center;gap:18px}
+.card{
+  --ac:#ff7a1a; --ac2:#ffb020;
+  flex:1 1 240px;max-width:300px;
+  position:relative;background:var(--card);border:2px solid var(--line);
+  border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:13px;
+  text-decoration:none;color:inherit;box-shadow:0 6px 0 rgba(35,40,58,.05);
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+}
+.card.c6{--ac:#12b886;--ac2:#5eead4}
+.card.c7{--ac:#4f7df9;--ac2:#60a5fa}
+.card.c9{--ac:#e14f9a;--ac2:#f472b6}
+.card.c10{--ac:#7c5cf0;--ac2:#a78bfa}
+.card:hover,.card:focus-visible{
+  transform:translateY(-8px);border-color:var(--ac);
+  box-shadow:0 20px 44px rgba(35,40,58,.13);outline:none;
+}
+.card .num{
+  position:absolute;top:18px;right:18px;
+  font-family:"Fredoka",system-ui,sans-serif;font-size:24px;font-weight:700;color:#fff;
+  background:linear-gradient(145deg,var(--ac),var(--ac2));
+  min-width:54px;height:54px;padding:0 8px;border-radius:16px;display:grid;place-items:center;
+  box-shadow:0 5px 0 rgba(35,40,58,.12);transition:transform .25s ease;
+}
+.card:hover .num{transform:rotate(-6deg) scale(1.06)}
+.card .ic{
+  width:56px;height:56px;border-radius:16px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--ac) 12%,#fff);
+  border:2px solid color-mix(in srgb,var(--ac) 30%,#fff);
+}
+.card .ic svg{width:34px;height:34px;stroke:var(--ac);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-family:"Fredoka",system-ui,sans-serif;font-size:1.3rem;padding-right:64px}
+.topics{display:flex;flex-wrap:wrap;gap:7px}
+.topics span{
+  background:var(--bg);border:2px solid var(--line);border-radius:999px;
+  padding:4px 11px;font-size:.8rem;font-weight:700;color:var(--muted);
+}
+.go{
+  margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;
+  font-weight:800;font-size:.98rem;border-radius:15px;padding:13px 16px;
+  box-shadow:0 5px 0 rgba(35,40,58,.15);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.go svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}
+.card:hover .go{transform:translateY(2px);box-shadow:0 3px 0 rgba(35,40,58,.15)}
+.card:hover .go svg{transform:translateX(5px)}
 
-    .boot {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: grid;
-      place-items: center;
-      background: radial-gradient(circle at center, rgba(8, 13, 24, 0.88), rgba(3, 6, 14, 0.98));
-      backdrop-filter: blur(14px);
-      transition: opacity 0.65s ease, visibility 0.65s ease;
-    }
-    .boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
+/* ---------- появление ---------- */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}.reveal.d5{transition-delay:.40s}
 
-    .boot-inner {
-      width: min(700px, 92vw);
-      padding: 34px;
-      border-radius: 28px;
-      background: rgba(9, 14, 25, 0.78);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(18px);
-    }
+footer{margin-top:26px;padding:26px 0 34px;text-align:center;color:var(--muted);font-size:.9rem}
+footer b{color:var(--accent)}
 
-    .boot-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+/* ---------- оверлей запуска ---------- */
+.ov{
+  position:fixed;inset:0;z-index:50;display:grid;place-items:center;
+  background:rgba(255,247,230,.97);backdrop-filter:blur(6px);
+  opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s ease;
+}
+.ov.show{opacity:1;visibility:visible}
+.ov-box{text-align:center;transform:scale(.94);transition:transform .3s ease}
+.ov.show .ov-box{transform:scale(1)}
+.ov-ic{
+  width:84px;height:84px;margin:0 auto;border-radius:24px;
+  display:grid;place-items:center;color:#fff;
+  background:linear-gradient(145deg,var(--accent),var(--accent2));
+  box-shadow:0 8px 0 rgba(35,40,58,.15);
+  animation:jump .45s ease-in-out infinite alternate;
+}
+.ov-ic svg{width:46px;height:46px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes jump{to{transform:translateY(-14px) rotate(3deg)}}
+.ov-name{font-family:"Fredoka",system-ui,sans-serif;font-size:clamp(1.4rem,4vw,2rem);margin:18px 0 16px}
+.ov-bar{width:min(340px,72vw);height:10px;margin:0 auto 14px;border-radius:999px;background:var(--line);overflow:hidden}
+.ov-bar span{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .25s linear}
+.ov-status{color:var(--muted);font-weight:700;font-size:.95rem}
 
-    .boot-orb {
-      width: 54px; height: 54px; border-radius: 50%;
-      background: conic-gradient(from 180deg, var(--cyan), var(--green), var(--violet), var(--cyan));
-      box-shadow: 0 0 30px rgba(34, 211, 238, 0.28), inset 0 0 18px rgba(255, 255, 255, 0.18);
-      animation: spin 3.2s linear infinite;
-      position: relative;
-    }
-    .boot-orb::after {
-      content: ""; position: absolute; inset: 7px; border-radius: 50%;
-      background: #090e19; box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.06);
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .boot-title { margin: 0; font-size: clamp(1.3rem, 3vw, 2rem); letter-spacing: 0.02em; }
-    .boot-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
-
-    .boot-lines {
-      min-height: 122px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 0.95rem; line-height: 1.7; color: #b9c6dd;
-    }
-    .boot-line {
-      opacity: 0; transform: translateY(10px);
-      animation: lineIn 0.45s ease forwards; white-space: pre-wrap;
-    }
-    @keyframes lineIn { to { opacity: 1; transform: translateY(0); } }
-
-    .boot-progress {
-      margin-top: 24px; height: 9px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.07); overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .boot-progress span {
-      display: block; width: 0%; height: 100%; border-radius: inherit;
-      background: linear-gradient(90deg, var(--cyan), var(--green), var(--violet));
-      box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
-      transition: width 0.28s ease;
-    }
-
-    .app {
-      position: relative; z-index: 1; min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 34px; padding: 48px 20px;
-      opacity: 0; transform: translateY(18px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
-    }
-    .app.ready { opacity: 1; transform: translateY(0); }
-
-    .hero { text-align: center; max-width: 920px; }
-
-    .badge {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 10px 16px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.055);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      color: #cbd5e1; font-size: 0.92rem;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      margin-bottom: 18px;
-    }
-    .badge-dot {
-      width: 9px; height: 9px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 14px rgba(52, 211, 153, 0.85);
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.35); opacity: 0.72; }
-    }
-
-    h1 {
-      margin: 0; font-size: clamp(2.2rem, 6vw, 4.5rem);
-      line-height: 1.03; letter-spacing: -0.04em;
-      background: linear-gradient(135deg, #ffffff 0%, #bfe9ff 35%, #d8c8ff 70%, #ffffff 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      filter: drop-shadow(0 10px 30px rgba(34, 211, 238, 0.12));
-    }
-
-    .subtitle {
-      margin: 18px auto 0; max-width: 760px; color: var(--muted);
-      font-size: clamp(1rem, 2vw, 1.12rem); line-height: 1.65;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 24px; width: min(1240px, 100%); perspective: 1200px;
-    }
-
-    .card {
-      --accent: #34d399;
-      --accent-rgb: 52, 211, 153;
-      --accent2: #22d3ee;
-      --accent2-rgb: 34, 211, 238;
-
-      position: relative;
-      display: flex; flex-direction: column; gap: 18px;
-      padding: 30px; border-radius: 30px; overflow: hidden;
-      text-decoration: none; color: inherit;
-      background: linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(7, 11, 20, 0.94));
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-      transform-style: preserve-3d; will-change: transform; outline: none;
-    }
-    .card.editor {
-      --accent: #22d3ee; --accent-rgb: 34, 211, 238;
-      --accent2: #34d399; --accent2-rgb: 52, 211, 153;
-    }
-    .card.robot {
-      --accent: #a78bfa; --accent-rgb: 167, 139, 250;
-      --accent2: #f472b6; --accent2-rgb: 244, 114, 182;
-    }
-    .card.py9 {
-      --accent: #fbbf24; --accent-rgb: 251, 191, 36;
-      --accent2: #fb923c; --accent2-rgb: 251, 146, 60;
-    }
-    .card.py10 {
-      --accent: #60a5fa; --accent-rgb: 96, 165, 250;
-      --accent2: #34d399; --accent2-rgb: 52, 211, 153;
-    }
-
-    .card::before {
-      content: ""; position: absolute; inset: -35%;
-      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-        rgba(var(--accent-rgb), 0.22), transparent 45%);
-      opacity: 0; transition: opacity 0.28s ease; pointer-events: none;
-    }
-    .card::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.045) 45%, transparent 60%);
-      transform: translateX(-120%); transition: transform 0.8s ease; pointer-events: none;
-    }
-    .card:hover::before, .card:focus-visible::before { opacity: 1; }
-    .card:hover::after, .card:focus-visible::after { transform: translateX(120%); }
-    .card:hover, .card:focus-visible {
-      border-color: rgba(var(--accent-rgb), 0.38);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42),
-        0 0 0 1px rgba(var(--accent-rgb), 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    }
-    .card:focus-visible {
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42), 0 0 0 4px rgba(var(--accent-rgb), 0.20);
-    }
-
-    .icon-wrap {
-      width: 92px; height: 92px; border-radius: 26px;
-      display: grid; place-items: center;
-      background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.24), rgba(255, 255, 255, 0.045));
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 14px 34px rgba(0, 0, 0, 0.22);
-      transform: translateZ(28px);
-    }
-    .icon-wrap svg {
-      width: 52px; height: 52px; stroke: var(--accent); fill: none;
-      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-      filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.28));
-    }
-
-    .card h2 {
-      margin: 0; font-size: clamp(1.45rem, 3vw, 1.9rem);
-      letter-spacing: -0.02em; transform: translateZ(18px);
-    }
-
-    .meta {
-      display: flex; flex-wrap: wrap; gap: 10px;
-      transform: translateZ(12px);
-    }
-    .pill {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 9px 13px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #d7dfec; font-size: 0.86rem; backdrop-filter: blur(8px);
-    }
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.85);
-      animation: pulse 2.2s ease-in-out infinite;
-    }
-
-    .open-btn {
-      align-self: flex-start;
-      display: inline-flex; align-items: center; gap: 10px;
-      margin-top: auto;
-      padding: 13px 18px; border-radius: 16px;
-      font-weight: 750; letter-spacing: 0.01em; color: white;
-      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.20), rgba(var(--accent2-rgb), 0.14));
-      border: 1px solid rgba(var(--accent-rgb), 0.42);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.18);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-      transform: translateZ(22px); pointer-events: none;
-    }
-    .card:hover .open-btn, .card:focus-visible .open-btn {
-      transform: translateZ(28px) translateY(-1px);
-      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.28), rgba(var(--accent2-rgb), 0.18));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10),
-        0 16px 34px rgba(0, 0, 0, 0.22),
-        0 0 24px rgba(var(--accent-rgb), 0.12);
-    }
-
-    .hints {
-      display: flex; flex-wrap: wrap; justify-content: center;
-      gap: 14px 22px; color: #8190aa; font-size: 0.92rem;
-    }
-    kbd {
-      display: inline-grid; place-items: center;
-      min-width: 26px; height: 24px; padding: 0 7px; border-radius: 8px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.22);
-      color: #dbe5f3;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.82rem;
-    }
-
-    .launch-overlay {
-      position: fixed; inset: 0; z-index: 90;
-      display: grid; place-items: center;
-      background: rgba(3, 7, 18, 0.84); backdrop-filter: blur(12px);
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.32s ease, visibility 0.32s ease;
-    }
-    .launch-overlay.show { opacity: 1; visibility: visible; }
-
-    .launch-box {
-      width: min(620px, 92vw); padding: 38px; border-radius: 30px; text-align: center;
-      background: rgba(9, 14, 25, 0.82);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      transform: scale(0.96); transition: transform 0.32s ease;
-    }
-    .launch-overlay.show .launch-box { transform: scale(1); }
-
-    .launch-title {
-      color: #94a3b8; font-size: 0.95rem; letter-spacing: 0.12em;
-      text-transform: uppercase; margin-bottom: 10px;
-    }
-    .launch-name {
-      font-size: clamp(1.6rem, 5vw, 2.6rem); font-weight: 850;
-      letter-spacing: -0.03em; margin-bottom: 24px;
-      background: linear-gradient(135deg, #fff, #bde8ff, #ded1ff);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .launch-bar {
-      width: min(460px, 100%); height: 9px; margin: 0 auto 16px;
-      border-radius: 999px; background: rgba(255, 255, 255, 0.07);
-      overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .launch-bar span {
-      display: block; width: 0%; height: 100%; border-radius: inherit;
-      background: linear-gradient(90deg, var(--cyan), var(--green), var(--violet));
-      box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
-      transition: width 0.22s linear;
-    }
-    .launch-status {
-      color: #a8b4cc;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.92rem;
-    }
-
-    @media (max-width: 720px) {
-      .boot-inner, .launch-box { padding: 24px; }
-      .card { padding: 24px; }
-      .icon-wrap { width: 76px; height: 76px; border-radius: 22px; }
-      .icon-wrap svg { width: 42px; height: 42px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.001ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.001ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
-  </style>
+@media (max-width:720px){
+  .mascot{width:92px}
+  .hero{gap:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important}
+  .g{display:none}
+  .reveal{opacity:1;transform:none}
+}
+</style>
 </head>
-
 <body>
-  <canvas id="bg" aria-hidden="true"></canvas>
 
-  <div class="boot" id="boot" role="status" aria-live="polite">
-    <div class="boot-inner">
-      <div class="boot-head">
-        <div class="boot-orb" aria-hidden="true"></div>
-        <div>
-          <h2 class="boot-title">Система запуска</h2>
-          <p class="boot-subtitle">Инициализация исполнительных сред</p>
-        </div>
-      </div>
+<div class="wrap">
 
-      <div class="boot-lines" id="bootLines"></div>
-
-      <div class="boot-progress" aria-hidden="true">
-        <span id="bootFill"></span>
-      </div>
+  <header class="reveal">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 17 L9 7 L14 17 L19 7"/>
+        <circle class="dot" cx="9" cy="7" r="1.6"/>
+        <circle class="dot" cx="19" cy="7" r="1.6"/>
+      </svg>
     </div>
-  </div>
+    <b>Полигон исполнителей</b>
+    <span class="tag"><i></i>все модули на месте</span>
+  </header>
 
-  <main class="app" id="app">
-    <section class="hero">
-      <div class="badge">
-        <span class="badge-dot" aria-hidden="true"></span>
-        Выберите исполнителя
-      </div>
+  <div class="hero">
+    <div class="mascot turtle-m reveal" aria-hidden="true">
+      <svg viewBox="0 0 64 64">
+        <path d="M12 43 C12 27 20 19 32 19 C44 19 52 27 52 43" />
+        <path d="M9 43 H55" />
+        <path d="M32 19 V43 M21 26 L43 41 M43 26 L21 41" />
+        <circle cx="57.5" cy="38" r="4.6" />
+        <circle cx="58.8" cy="36.6" r="1.1" fill="#12b886" stroke="none" />
+        <path d="M19 43 l-3.5 7.5 M28.5 43 l-1.8 7.5 M37.5 43 l1.8 7.5 M46 43 l3.5 7.5" />
+        <path d="M12 41 l-5.5 -2.5" />
+        <path d="M7 55 H57" />
+      </svg>
+    </div>
 
-      <h1>Инициализация проекта</h1>
-
-      <p class="subtitle">
-        Стартовая страница для перехода в модули <strong>Черепаха 6 класс</strong>,
-        <strong>Python 8 класс</strong>, <strong>Робот 7 класс</strong>, <strong>Python 9 класс</strong>
-        и <strong>Python 10 класс</strong>. Наведите курсор, выберите среду — и она запустится
-        с плавной анимацией.
+    <div class="mid reveal d1">
+      <h1>Исполнители <em>алгоритмов</em></h1>
+      <p>
+        Черепаха, Робот и три Python-редактора — выбери исполнителя, открой модуль
+        и решай задачи. Каждый модуль живёт на своей странице: нажми на карточку — и мы перейдём.
       </p>
-    </section>
-
-    <section class="grid" aria-label="Доступные исполнители">
-      <a
-        class="card turtle"
-        href="turtle.html"
-        data-name="Черепаха — 6 класс"
-        aria-label="Открыть Черепаха — 6 класс"
-      >
-        <div class="icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <path d="M20 34c0-8 5-14 12-14s12 6 12 14-5 12-12 12-12-4-12-12Z" />
-            <path d="M44 30l7-4 3 5-6 4" />
-            <path d="M20 38l-7 3-2-5 6-4" />
-            <path d="M28 46l-2 7 5 1 2-6" />
-            <path d="M38 46l2 7-5 1-2-6" />
-            <path d="M26 30h12" />
-            <path d="M32 24v20" />
-          </svg>
-        </div>
-
-        <h2>Черепаха — 6 класс</h2>
-
-        <div class="meta">
-          <span class="pill">
-            <span class="status-dot" aria-hidden="true"></span>
-            Готово к работе
-          </span>
-          <span class="pill">Клавиша <kbd>1</kbd></span>
-        </div>
-
-        <span class="open-btn">Открыть модуль →</span>
-      </a>
-
-      <a
-        class="card editor"
-        href="editor8_updated.html"
-        data-name="Python — 8 класс"
-        aria-label="Открыть Python — 8 класс"
-      >
-        <div class="icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <path d="M22 20l-12 12 12 12" />
-            <path d="M42 20l12 12-12 12" />
-            <path d="M36 14l-8 36" />
-          </svg>
-        </div>
-        <h2>Python — 8 класс</h2>
-        <div class="meta">
-          <span class="pill"><span class="status-dot" aria-hidden="true"></span>Готово к работе</span>
-          <span class="pill">Клавиша <kbd>3</kbd></span>
-        </div>
-        <span class="open-btn">Открыть модуль →</span>
-      </a>
-
-      <a
-        class="card robot"
-        href="robot.html"
-        data-name="Робот — 7 класс"
-        aria-label="Открыть Робот — 7 класс"
-      >
-        <div class="icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <rect x="18" y="22" width="28" height="24" rx="7" />
-            <circle cx="27" cy="33" r="2.5" />
-            <circle cx="37" cy="33" r="2.5" />
-            <path d="M28 40h8" />
-            <path d="M32 22v-8" />
-            <path d="M32 14a3 3 0 1 0 .01 0" />
-            <path d="M18 30h-6" />
-            <path d="M52 30h6" />
-            <path d="M24 46v8" />
-            <path d="M40 46v8" />
-          </svg>
-        </div>
-
-        <h2>Робот — 7 класс</h2>
-
-        <div class="meta">
-          <span class="pill">
-            <span class="status-dot" aria-hidden="true"></span>
-            Задание не выбрано
-          </span>
-          <span class="pill">Клавиша <kbd>2</kbd></span>
-        </div>
-
-        <span class="open-btn">Открыть модуль →</span>
-      </a>
-
-      <a
-        class="card py9"
-        href="python_strings.html"
-        data-name="Python — 9 класс"
-        aria-label="Открыть Python — 9 класс"
-      >
-        <div class="icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <path d="M22 20l-12 12 12 12" />
-            <path d="M42 20l12 12-12 12" />
-            <path d="M18 54h28" />
-            <path d="M26 8h12v6H26z" />
-          </svg>
-        </div>
-        <h2>Python — 9 класс</h2>
-        <div class="meta">
-          <span class="pill"><span class="status-dot" aria-hidden="true"></span>Строки</span>
-          <span class="pill">Клавиша <kbd>4</kbd></span>
-        </div>
-        <span class="open-btn">Открыть модуль →</span>
-      </a>
-
-      <a
-        class="card py10"
-        href="python_array.html"
-        data-name="Python — 10 класс"
-        aria-label="Открыть Python — 10 класс"
-      >
-        <div class="icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <path d="M22 20l-12 12 12 12" />
-            <path d="M42 20l12 12-12 12" />
-            <path d="M14 8h6M20 4v8" />
-            <path d="M14 56h36" />
-            <path d="M40 8h10M45 4v8" />
-          </svg>
-        </div>
-        <h2>Python — 10 класс</h2>
-        <div class="meta">
-          <span class="pill"><span class="status-dot" aria-hidden="true"></span>Готово к работе</span>
-          <span class="pill">Клавиша <kbd>5</kbd></span>
-        </div>
-        <span class="open-btn">Открыть модуль →</span>
-      </a>
-    </section>
-
-    <div class="hints" aria-hidden="true">
-      <span><kbd>1</kbd> — Черепаха 6 класс</span>
-      <span><kbd>2</kbd> — Робот 7 класс</span>
-      <span><kbd>3</kbd> — Python 8 класс</span>
-      <span><kbd>4</kbd> — Python 9 класс</span>
-      <span><kbd>5</kbd> — Python 10 класс</span>
-      <span><kbd>Tab</kbd> — навигация</span>
-      <span><kbd>Enter</kbd> — открыть</span>
-    </div>
-  </main>
-
-  <div class="launch-overlay" id="launchOverlay" aria-hidden="true">
-    <div class="launch-box">
-      <div class="launch-title">Запуск среды</div>
-      <div class="launch-name" id="launchName">—</div>
-
-      <div class="launch-bar" aria-hidden="true">
-        <span id="launchFill"></span>
+      <div class="badges">
+        <span>5 модулей</span>
+        <span>6–10 классы</span>
+        <span>Черепаха · Робот · Python</span>
       </div>
+    </div>
 
-      <div class="launch-status" id="launchStatus">Подключение...</div>
+    <div class="mascot robot-m reveal d2" aria-hidden="true">
+      <svg viewBox="0 0 120 140">
+        <line x1="60" y1="8" x2="60" y2="26" stroke="#8a93b8" stroke-width="4"/><circle class="ball" cx="60" cy="8" r="7"/>
+        <g><rect x="6" y="84" width="14" height="38" rx="7" fill="#8a93b8"/></g>
+        <g class="armR"><rect x="100" y="84" width="14" height="38" rx="7" fill="#8a93b8"/></g>
+        <rect x="26" y="80" width="68" height="50" rx="12" fill="#c9d0ee"/><rect x="44" y="94" width="32" height="20" rx="6" fill="#4f7df9"/>
+        <rect x="18" y="24" width="84" height="60" rx="18" fill="#dfe4f7" stroke="#8a93b8" stroke-width="3"/>
+        <rect x="28" y="36" width="64" height="36" rx="12" fill="#1d2233"/>
+        <circle class="eye" cx="46" cy="52" r="8"/><circle class="eye" cx="74" cy="52" r="8"/>
+        <rect x="50" y="62" width="20" height="3" rx="1.5" fill="#5ee0ff"/>
+      </svg>
     </div>
   </div>
 
-  <noscript>
-    <style>
-      .boot { display: none !important; }
-      .app { opacity: 1 !important; transform: none !important; }
-    </style>
-  </noscript>
+  <section>
+    <h2 class="reveal">Выбери модуль</h2>
+    <p class="sub reveal d1">Карточки отсортированы по классам — от черепахи шестиклассника до массивов десятиклассника.</p>
 
-  <script>
-    const AUTO_REDIRECT_PAGE = null;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    <div class="courses">
+      <a class="card c6 reveal d1" href="turtle.html" data-name="Черепаха — 6 класс">
+        <span class="num">6</span>
+        <span class="ic"><svg viewBox="0 0 64 64">
+          <path d="M12 44 C12 28 20 19 32 19 C44 19 52 28 52 44" />
+          <path d="M10 44 H54" />
+          <path d="M32 19 V44 M21 25 L43 41 M43 25 L21 41" />
+          <circle cx="57" cy="40" r="4.5" />
+          <path d="M18 44 l-3 7 M46 44 l3 7" />
+        </svg></span>
+        <h3>Черепаха</h3>
+        <div class="topics"><span>вперёд</span><span>назад</span><span>налево</span><span>направо</span></div>
+        <span class="go">Открыть модуль
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
 
-    const boot = document.getElementById("boot");
-    const bootLines = document.getElementById("bootLines");
-    const bootFill = document.getElementById("bootFill");
-    const app = document.getElementById("app");
+      <a class="card c7 reveal d2" href="robot.html" data-name="Робот — 7 класс">
+        <span class="num">7</span>
+        <span class="ic"><svg viewBox="0 0 64 64">
+          <rect x="18" y="22" width="28" height="24" rx="7" />
+          <circle cx="27" cy="33" r="2.5" /><circle cx="37" cy="33" r="2.5" />
+          <path d="M28 40h8" />
+          <path d="M32 22v-8M32 14a3 3 0 1 0 .01 0" />
+          <path d="M18 30h-6M46 30h6M24 46v8M40 46v8" />
+        </svg></span>
+        <h3>Робот</h3>
+        <div class="topics"><span>клетчатое поле</span><span>стены</span><span>закрась</span></div>
+        <span class="go">Открыть модуль
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
 
-    const launchOverlay = document.getElementById("launchOverlay");
-    const launchName = document.getElementById("launchName");
-    const launchFill = document.getElementById("launchFill");
-    const launchStatus = document.getElementById("launchStatus");
+      <a class="card c8 reveal d3" href="editor8_updated.html" data-name="Python — 8 класс">
+        <span class="num">8</span>
+        <span class="ic"><svg viewBox="0 0 64 64">
+          <path d="M24 20 L12 32 L24 44" />
+          <path d="M40 20 L52 32 L40 44" />
+          <path d="M36 16 L28 48" />
+        </svg></span>
+        <h3>Python-редактор</h3>
+        <div class="topics"><span>редактор кода</span><span>запуск программ</span></div>
+        <span class="go">Открыть модуль
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
 
-    const cards = document.querySelectorAll(".card");
-    let launching = false;
+      <a class="card c9 reveal d4" href="python_strings.html" data-name="Python — 9 класс">
+        <span class="num">9</span>
+        <span class="ic"><svg viewBox="0 0 64 64">
+          <path d="M26 18 C21 20 18 25 18 31 V39 H28 V29 H22 C22 25 24 22 28 21" />
+          <path d="M44 18 C39 20 36 25 36 31 V39 H46 V29 H40 C40 25 42 22 46 21" />
+          <path d="M14 50 H50" />
+        </svg></span>
+        <h3>Строки</h3>
+        <div class="topics"><span>строки</span><span>методы</span><span>срезы</span></div>
+        <span class="go">Открыть модуль
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      <a class="card c10 reveal d5" href="python_array.html" data-name="Python — 10 класс">
+        <span class="num">10</span>
+        <span class="ic"><svg viewBox="0 0 64 64">
+          <path d="M27 16 L21 16 L21 48 L27 48" />
+          <path d="M37 16 L43 16 L43 48 L37 48" />
+          <circle cx="32" cy="25" r="1.8" /><circle cx="32" cy="32" r="1.8" /><circle cx="32" cy="39" r="1.8" />
+        </svg></span>
+        <h3>Массивы</h3>
+        <div class="topics"><span>списки</span><span>циклы</span><span>поиск</span></div>
+        <span class="go">Открыть модуль
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+    </div>
+  </section>
 
-    function addBootLine(text) {
-      const line = document.createElement("div");
-      line.className = "boot-line";
-      line.textContent = text;
-      bootLines.appendChild(line);
-    }
+  <footer class="reveal">
+    Полигон исполнителей · черепаха, робот и Python для <b>6–10 классов</b>
+  </footer>
 
-    async function runBootSequence() {
-      const steps = [
-        ["Инициализация оболочки...", 18],
-        ["Загрузка визуального ядра...", 42],
-        ["Проверка модулей исполнителей...", 72],
-        ["Синхронизация интерфейса...", 92],
-        ["Готово. Выберите среду.", 100],
-      ];
+</div>
 
-      for (const [text, progress] of steps) {
-        addBootLine("> " + text);
-        bootFill.style.width = progress + "%";
-        await sleep(reduceMotion ? 70 : 480);
+<!-- оверлей запуска -->
+<div class="ov" id="ov" aria-hidden="true">
+  <div class="ov-box">
+    <div class="ov-ic" id="ovIc">
+      <svg viewBox="0 0 64 64"><path d="M24 20 L12 32 L24 44 M40 20 L52 32 L40 44" /></svg>
+    </div>
+    <div class="ov-name" id="ovName">—</div>
+    <div class="ov-bar"><span id="ovFill"></span></div>
+    <div class="ov-status" id="ovStatus">Подключаем исполнителя…</div>
+  </div>
+</div>
+
+<noscript>
+  <style>.reveal{opacity:1;transform:none}.g{display:none}</style>
+</noscript>
+
+<script>
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* плавающие символы алгоритмов */
+const GLYPHS = ["→","{}","нц","кц","repeat","if","< >","==","вперёд","повтори","раз","раздел","пока","алг"];
+if (!reduceMotion) {
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("span");
+    s.className = "g";
+    s.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+    s.style.left = Math.random() * 94 + "vw";
+    s.style.fontSize = 16 + Math.random() * 26 + "px";
+    s.style.animationDuration = 16 + Math.random() * 18 + "s";
+    s.style.animationDelay = -Math.random() * 24 + "s";
+    document.body.appendChild(s);
+  }
+}
+
+/* появление блоков */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+/* запуск модуля */
+const ov = document.getElementById("ov");
+const ovIc = document.getElementById("ovIc");
+const ovName = document.getElementById("ovName");
+const ovFill = document.getElementById("ovFill");
+const ovStatus = document.getElementById("ovStatus");
+let launching = false;
+
+document.querySelectorAll(".card").forEach((card) => {
+  card.addEventListener("click", (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    if (launching) return;
+    launching = true;
+
+    /* иконка модуля в оверлее = иконка карточки */
+    ovIc.innerHTML = "";
+    ovIc.appendChild(card.querySelector(".ic svg").cloneNode(true));
+
+    ov.classList.add("show");
+    ov.setAttribute("aria-hidden", "false");
+    ovName.textContent = card.dataset.name;
+
+    const stages = ["Подключаем исполнителя…", "Загружаем команды…", "Проверяем поле…", "Поехали!"];
+    let i = 0;
+    (function next() {
+      if (i < stages.length) {
+        ovStatus.textContent = stages[i];
+        ovFill.style.width = ((i + 1) / stages.length) * 100 + "%";
+        i++;
+        setTimeout(next, reduceMotion ? 60 : 300);
+      } else {
+        setTimeout(() => { location.href = card.getAttribute("href"); }, reduceMotion ? 30 : 180);
       }
-
-      await sleep(reduceMotion ? 40 : 260);
-      boot.classList.add("done");
-      app.classList.add("ready");
-
-      if (AUTO_REDIRECT_PAGE) {
-        const targetCard = document.querySelector(`.card[href="${AUTO_REDIRECT_PAGE}"]`);
-        if (targetCard) {
-          launch(targetCard.getAttribute("href"), targetCard.dataset.name);
-        } else {
-          window.location.href = AUTO_REDIRECT_PAGE;
-        }
-      }
-    }
-
-    function launch(url, name) {
-      if (launching) return;
-      launching = true;
-
-      launchOverlay.classList.add("show");
-      launchOverlay.setAttribute("aria-hidden", "false");
-      launchName.textContent = name || "Исполнитель";
-      launchFill.style.width = "0%";
-
-      const stages = [
-        "Подключение к файлам...",
-        "Загрузка консоли...",
-        "Инициализация исполнителя...",
-        "Открытие страницы...",
-      ];
-      let index = 0;
-
-      function nextStage() {
-        if (index < stages.length) {
-          launchStatus.textContent = stages[index];
-          launchFill.style.width = (((index + 1) / stages.length) * 100) + "%";
-          index++;
-          setTimeout(nextStage, reduceMotion ? 70 : 260);
-        } else {
-          setTimeout(() => { window.location.href = url; }, reduceMotion ? 40 : 220);
-        }
-      }
-      nextStage();
-    }
-
-    cards.forEach((card) => {
-      card.addEventListener("mousemove", (event) => {
-        if (reduceMotion) return;
-        const rect = card.getBoundingClientRect();
-        const x = (event.clientX - rect.left) / rect.width;
-        const y = (event.clientY - rect.top) / rect.height;
-        card.style.setProperty("--mx", `${x * 100}%`);
-        card.style.setProperty("--my", `${y * 100}%`);
-        const rotateX = (0.5 - y) * 7;
-        const rotateY = (x - 0.5) * 9;
-        card.style.transform =
-          `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
-      });
-
-      card.addEventListener("mouseleave", () => { card.style.transform = ""; });
-
-      card.addEventListener("click", (event) => {
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-        event.preventDefault();
-        launch(card.getAttribute("href"), card.dataset.name);
-      });
-    });
-
-    window.addEventListener("keydown", (event) => {
-      if (launching || !app.classList.contains("ready")) return;
-      const key = event.key;
-      if (key === "1" || key === "Numpad1") {
-        const turtle = document.querySelector(".card.turtle");
-        if (turtle) { event.preventDefault(); launch(turtle.getAttribute("href"), turtle.dataset.name); }
-      }
-      if (key === "3" || key === "Numpad3") {
-        const ed = document.querySelector(".card.editor");
-        if (ed) { event.preventDefault(); launch(ed.getAttribute("href"), ed.dataset.name); }
-      }
-      if (key === "4" || key === "Numpad4") {
-        const p9 = document.querySelector(".card.py9");
-        if (p9) { event.preventDefault(); launch(p9.getAttribute("href"), p9.dataset.name); }
-      }
-      if (key === "2" || key === "Numpad2") {
-        const robot = document.querySelector(".card.robot");
-        if (robot) { event.preventDefault(); launch(robot.getAttribute("href"), robot.dataset.name); }
-      }
-      if (key === "5" || key === "Numpad5") {
-        const p10 = document.querySelector(".card.py10");
-        if (p10) { event.preventDefault(); launch(p10.getAttribute("href"), p10.dataset.name); }
-      }
-    });
-
-    const canvas = document.getElementById("bg");
-    const ctx = canvas.getContext("2d");
-    let width = 0, height = 0, particles = [];
-
-    function resizeCanvas() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initParticles();
-    }
-    function initParticles() {
-      const count = Math.min(95, Math.floor((width * height) / 17000));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        r: Math.random() * 2 + 1,
-      }));
-    }
-    function drawParticles() {
-      ctx.clearRect(0, 0, width, height);
-      for (const p of particles) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(148, 163, 184, 0.42)";
-        ctx.fill();
-      }
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 135) {
-            const alpha = (1 - dist / 135) * 0.18;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${alpha})`;
-            ctx.lineWidth = 1; ctx.stroke();
-          }
-        }
-      }
-      if (!reduceMotion) requestAnimationFrame(drawParticles);
-    }
-
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-    drawParticles();
-    runBootSequence();
-  </script>
+    })();
+  });
+});
+</script>
 </body>
 </html>
