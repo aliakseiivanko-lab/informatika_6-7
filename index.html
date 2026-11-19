@@ -154,8 +154,8 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-      gap: 24px; width: min(1140px, 100%); perspective: 1200px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px; width: min(1240px, 100%); perspective: 1200px;
     }
 
     .card {
@@ -181,6 +181,10 @@
     .card.robot {
       --accent: #a78bfa; --accent-rgb: 167, 139, 250;
       --accent2: #f472b6; --accent2-rgb: 244, 114, 182;
+    }
+    .card.py9 {
+      --accent: #fbbf24; --accent-rgb: 251, 191, 36;
+      --accent2: #fb923c; --accent2-rgb: 251, 146, 60;
     }
 
     .card::before {
@@ -372,7 +376,7 @@
 
       <p class="subtitle">
         Стартовая страница для перехода в модули <strong>Черепаха 6 класс</strong>,
-        <strong>Python 8 класс</strong> и <strong>Робот 7 класс</strong>. Наведите курсор, выберите среду — и она запустится
+        <strong>Python 8 класс</strong>, <strong>Робот 7 класс</strong> и <strong>Python 9 класс</strong>. Наведите курсор, выберите среду — и она запустится
         с плавной анимацией.
       </p>
     </section>
@@ -463,12 +467,35 @@
 
         <span class="open-btn">Открыть модуль →</span>
       </a>
+
+      <a
+        class="card py9"
+        href="python_strings.html"
+        data-name="Python — 9 класс"
+        aria-label="Открыть Python — 9 класс"
+      >
+        <div class="icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <path d="M22 20l-12 12 12 12" />
+            <path d="M42 20l12 12-12 12" />
+            <path d="M18 54h28" />
+            <path d="M26 8h12v6H26z" />
+          </svg>
+        </div>
+        <h2>Python — 9 класс</h2>
+        <div class="meta">
+          <span class="pill"><span class="status-dot" aria-hidden="true"></span>Строки</span>
+          <span class="pill">Клавиша <kbd>4</kbd></span>
+        </div>
+        <span class="open-btn">Открыть модуль →</span>
+      </a>
     </section>
 
     <div class="hints" aria-hidden="true">
       <span><kbd>1</kbd> — Черепаха 6 класс</span>
       <span><kbd>2</kbd> — Робот 7 класс</span>
       <span><kbd>3</kbd> — Python 8 класс</span>
+      <span><kbd>4</kbd> — Python 9 класс</span>
       <span><kbd>Tab</kbd> — навигация</span>
       <span><kbd>Enter</kbd> — открыть</span>
     </div>
@@ -612,6 +639,10 @@
       if (key === "3" || key === "Numpad3") {
         const ed = document.querySelector(".card.editor");
         if (ed) { event.preventDefault(); launch(ed.getAttribute("href"), ed.dataset.name); }
+      }
+      if (key === "4" || key === "Numpad4") {
+        const p9 = document.querySelector(".card.py9");
+        if (p9) { event.preventDefault(); launch(p9.getAttribute("href"), p9.dataset.name); }
       }
       if (key === "2" || key === "Numpad2") {
         const robot = document.querySelector(".card.robot");
